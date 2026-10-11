@@ -7,6 +7,11 @@ services:
       - "${MONGO_PORT:-27017}:27017"
     volumes:
       - mongodata:/data/db
+    # WiredTiger keeps a file per collection and index. The default 1024 open-file limit ran out in tests.
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     healthcheck:
       # Initiates the replica set on first start, then reports healthy once it is primary.
       test:

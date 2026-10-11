@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useApi } from "@/lib/useApi";
 import { useTeamScope, withQuery } from "@/lib/teamScope";
 import { useParams } from "react-router";
+import { RubricBreakdown } from "@/components/dash/RubricPanel";
 
 interface Trend {
   label: string;
@@ -41,6 +42,7 @@ export function VolunteerDetailPage() {
               </CardContent>
             </Card>
           </div>
+          <div className="mt-4"><RubricBreakdown path={`/volunteers/${id}/rubric`} /></div>
           <Card className="mt-4">
             <CardHeader><CardTitle>Warmth ratings</CardTitle><CardDescription>The volunteer's own series. The caller's and the model's ratings are shown separately and are never averaged together.</CardDescription></CardHeader>
             <CardContent className="space-y-4">

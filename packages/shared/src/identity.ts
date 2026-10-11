@@ -57,6 +57,9 @@ export const OrganizationDoc = z.object({
   country: z.string().max(80).nullable().optional(),
   /** Set once sample data has been seeded (or deliberately skipped). Prevents re-seeding. */
   sample_seeded_at: z.date().nullable().optional(),
+  /** SHA-256 of the current join code. The code itself is shown once and never stored. Added in schema v6. */
+  invite_code_hash: z.string().length(64).nullable().optional(),
+  invite_code_rotated_at: z.date().nullable().optional(),
 });
 export type OrganizationDoc = z.infer<typeof OrganizationDoc>;
 

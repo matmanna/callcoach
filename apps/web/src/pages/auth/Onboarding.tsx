@@ -11,10 +11,12 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AuthCard, type Accent } from "./AuthCard.tsx";
-import { ArrowRight, Building2, Check, FileUp, Hand, type LucideIcon, SkipForward, SlidersHorizontal, UsersRound } from "lucide-react";
+import { ArrowRight, Building2, Check, FileUp, Hand, type LucideIcon, SkipForward, SlidersHorizontal, UserPlus, UsersRound } from "lucide-react";
 import rubricRaw from "../../../../../data/rubric.json";
 
 const STEPS = 5;
+/** Volunteer join screen: the same pastel family, in rose. */
+const JOIN_ACCENT = { tint: "#fbe6ee", ink: "#a8567a", icon: UserPlus };
 
 /** Each step gets its own pastel. Ink colors are the same family, darker, for text and icons. */
 const STEP_ACCENTS: Array<Accent & { icon: LucideIcon }> = [
@@ -99,6 +101,7 @@ export function Onboarding() {
   const [team, setTeam] = useState({ name: "", focus: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
 
   // Load the organization rubric (or the default) the first time the weights step opens.
   useEffect(() => {
@@ -152,7 +155,24 @@ export function Onboarding() {
       </AuthCard>
     );
 
-  if (me.user.user_type !== "coordinator") return <Navigate to="/home" replace />;
+  if (me.user.user_type !== "coordinator") {
+    if (me.org) return <Navigate to="/home" replace />;
+    // A volunteer with no organization: enter the join code from the coordinator.
+    return (
+      <AuthCard title="Join your team" description="Enter the join code your coordinator shared with you. It looks like XXXX-XXXX." accent={JOIN_ACCENT}>
+        <form onSubmit={(e) => (e.preventDefault(), run(async () => (await api("/org/join", { body: { code: joinCode } }), await refresh(), navigate("/home", { replace: true }))))}>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="jc">Join code</FieldLabel>
+              <Input id="jc" autoComplete="off" autoCapitalize="characters" className="font-mono tracking-widest" placeholder="XXXX-XXXX" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} required />
+            </Field>
+            {error ? <FieldError>{error}</FieldError> : null}
+            <Button type="submit" disabled={busy || joinCode.trim().length < 8} className={ACTION}><UserPlus className="size-4" />Join team</Button>
+          </FieldGroup>
+        </form>
+      </AuthCard>
+    );
+  }
 
   const progress = <StepDots step={step} />;
 

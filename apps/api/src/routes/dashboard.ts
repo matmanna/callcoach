@@ -26,6 +26,7 @@ import { toCsv } from "../imports/csv.ts";
 import type { Deps } from "../services/context.ts";
 import { CONTACT_SORTS, deleteDossier, donorForCoordinator, getContactHistory, getDossier, listContacts, type ContactSort } from "../services/dashboard/contacts.ts";
 import { approveVersion, createVersion, factWarnings, listSheets, loadSheet, reverifyItem } from "../services/dashboard/facts.ts";
+import { volunteerRubric } from "../services/dashboard/rubricScores.ts";
 import { CHART_KINDS, COMPARE_KINDS, campaignsOverview, chart, compare, map, type ChartKind } from "../services/dashboard/insights.ts";
 import { changeLimit } from "../services/dashboard/limits.ts";
 import {
@@ -120,6 +121,10 @@ export function dashboardRoutes(api: Hono<ApiEnv>, deps: Deps) {
     const sort = parseVolunteerSort(q.sort);
     const status = q.status === "removed" || q.status === "all" ? q.status : "active";
     return c.json(await listVolunteers(deps, scopeOf(c), { sort, dir: q.dir === "desc" ? "desc" : "asc", status }));
+  });
+  api.get("/volunteers/:id/rubric", async (c) => {
+    const scope = scopeOf(c);
+    return c.json(await volunteerRubric(deps, scope.orgId, c.req.param("id"), scope.teamIds));
   });
   api.get("/volunteers/:id/trend", async (c) => c.json(await volunteerTrend(deps, scopeOf(c), c.req.param("id"), intParam(c.req.query("weeks"), 12, 26))));
   api.post("/volunteers/:membershipId/reassign", async (c) => {

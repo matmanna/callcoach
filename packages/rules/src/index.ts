@@ -8,5 +8,6 @@ export { IDENTIFIER_PATTERNS, findIdentifierMatches } from "./patterns.ts";
 export { draftFromNote } from "./logDraft.ts";
 export { noteContext, scrubNote } from "./note.ts";
 export { isOverdue } from "./overdue.ts";
+export * from "./rubricEval.ts";
 export { redactWithExtra } from "./mergeIntervals.ts";
 export type { ExtraInterval } from "./mergeIntervals.ts";

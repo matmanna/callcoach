@@ -1,5 +1,6 @@
 import { LoadState, PageHeader, fmtDate } from "@/components/dash/bits";
 import { InviteDialog } from "@/components/dash/InviteDialog";
+import { JoinCodeCard } from "@/components/dash/JoinCodeCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Invites } from "@/pages/coordinator/Invites";
 import { Badge } from "@/components/ui/badge";
@@ -120,6 +121,7 @@ export function VolunteersPage() {
           </Table>
         </div>
       </LoadState>
+      <div className="mt-6"><JoinCodeCard /></div>
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>Pending invites</CardTitle>

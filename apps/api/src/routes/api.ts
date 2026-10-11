@@ -31,6 +31,8 @@ import { callerVisibleItems, listSheets as listSheetViews, staleDays, loadSheet 
 import { nowOf } from "../services/context.ts";
 import { archiveTeam, changeMemberRole, createTeam, listMembers, removeMember, teamTree, updateTeam } from "../services/teams.ts";
 import { postCallRoutes } from "./postcall.ts";
+import { volunteerRubric } from "../services/dashboard/rubricScores.ts";
+import { joinCodeStatus, joinWithCode, rotateJoinCode } from "../services/orgCodes.ts";
 
 export type ApiEnv = { Variables: { user: SessionUser | null; access: Access } };
 
@@ -86,6 +88,27 @@ export function apiRoutes(deps: Deps) {
       pending_invites: await listPendingInvitesForEmail(deps, access.user.email),
       teams: teamTree(access),
     });
+  });
+
+  // Organization join code. Coordinators see whether one is active and rotate it. Volunteers enter it to join.
+  api.get("/org/join-code", async (c) => c.json(await joinCodeStatus(deps, requireCoordinator(c.get("access")))));
+  api.post("/org/join-code/rotate", async (c) => {
+    const access = c.get("access");
+    const orgId = requireCoordinator(access);
+    parseBody(z.strictObject({}), await jsonBody(c));
+    return c.json(await rotateJoinCode(deps, orgId, access.user.id));
+  });
+  api.post("/org/join", async (c) => {
+    const user = c.get("user");
+    if (!user) throw new Error("authenticated route missing session user");
+    const body = parseBody(z.strictObject({ code: z.string().trim().min(8).max(12) }), await jsonBody(c));
+    return c.json(await joinWithCode(deps, { id: user.id, user_type: user.user_type }, body.code), 201);
+  });
+
+  // The volunteer's own rubric results. Same rules as the coordinator view, for their calls only.
+  api.get("/me/rubric", async (c) => {
+    const orgId = requireOrg(c.get("access"));
+    return c.json(await volunteerRubric(deps, orgId, c.get("access").user.id, null));
   });
 
   api.patch("/me", async (c) => {

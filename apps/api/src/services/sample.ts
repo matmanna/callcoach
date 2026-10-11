@@ -9,6 +9,7 @@
 import { DONOR_COLUMNS, GIFT_COLUMNS, type UserType } from "@sc/shared";
 import Papa from "papaparse";
 import { loadAccess } from "../auth/access.ts";
+import { seedDemoActivity, type DemoActivityResult } from "./demoActivity.ts";
 import { collections } from "../db/collections.ts";
 import { commitImport } from "../imports/importer.ts";
 import { SAMPLE_CAMPAIGN, SAMPLE_DONORS, SAMPLE_FACTS, SAMPLE_GIFTS, SAMPLE_RUBRIC, SAMPLE_TEAMS } from "../sample/sampleData.ts";
@@ -36,6 +37,7 @@ export interface SampleResult {
   gifts: number;
   facts_approved: number;
   rubric: boolean;
+  activity: DemoActivityResult | null;
 }
 
 /**
@@ -45,7 +47,7 @@ export interface SampleResult {
  * claim is released so a later call can retry.
  */
 export async function seedSampleData(deps: Deps, user: SampleUser, opts: { force?: boolean } = {}): Promise<SampleResult> {
-  const empty: SampleResult = { teams: 0, donors: 0, gifts: 0, facts_approved: 0, rubric: false };
+  const empty: SampleResult = { teams: 0, donors: 0, gifts: 0, facts_approved: 0, rubric: false, activity: null };
   if (!opts.force && !sampleSeedEnabled(deps.env)) return { ...empty, skipped: "disabled" };
 
   const c = collections(deps.db);
@@ -72,7 +74,7 @@ export async function seedSampleData(deps: Deps, user: SampleUser, opts: { force
 async function run(deps: Deps, user: SampleUser, access0: Awaited<ReturnType<typeof loadAccess>>, orgId: string): Promise<SampleResult> {
   const c = collections(deps.db);
   let access = access0;
-  const result: SampleResult = { teams: 0, donors: 0, gifts: 0, facts_approved: 0, rubric: false };
+  const result: SampleResult = { teams: 0, donors: 0, gifts: 0, facts_approved: 0, rubric: false, activity: null };
   for (const t of SAMPLE_TEAMS) {
     if (!(await c.teams.findOne({ org_id: orgId, name: t.name }))) {
       await createTeam(deps, access, orgId, { ...t, parent_team_id: null });
@@ -104,6 +106,9 @@ async function run(deps: Deps, user: SampleUser, access0: Awaited<ReturnType<typ
 
   const rubric = await commitImport(deps, access, orgId, "rubric", { file_name: "sample-rubric.json", content: JSON.stringify(SAMPLE_RUBRIC), update_existing: false, team_id: null });
   result.rubric = rubric.seed_run.accepted_count > 0;
+  // Calls, follow-ups, warmth, and a synthetic donor spread, so the dashboards and charts have something real-looking to show.
+  const sampleTeams = await c.teams.find({ org_id: orgId, name: { $in: SAMPLE_TEAMS.map((t) => t.name) } }).toArray();
+  result.activity = await seedDemoActivity(deps, { orgId, callerId: user.id, teams: sampleTeams });
   return result;
 }
 
