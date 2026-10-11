@@ -53,7 +53,7 @@ export function AcceptInvite() {
     try {
       await api("/invites/accept", { body: info.has_account ? { token } : { token, ...form } });
       await refresh();
-      navigate("/");
+      navigate("/app");
     } catch (err) {
       setError(errorMessage(err));
     } finally {
