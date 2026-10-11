@@ -22,6 +22,9 @@ import { ImportRequest, commitImport, previewImport } from "../imports/importer.
 import type { Deps } from "../services/context.ts";
 import { acceptInvite, createInvite, listInvites, lookupInvite, resendInvite, revokeInvite } from "../services/invites.ts";
 import { onboardCoordinator, toUserKey } from "../services/orgs.ts";
+import { dashboardRoutes } from "./dashboard.ts";
+import { callerVisibleItems, listSheets as listSheetViews, staleDays, loadSheet as loadSheetV, approveVersion as approveFactVersion } from "../services/dashboard/facts.ts";
+import { nowOf } from "../services/context.ts";
 import { archiveTeam, changeMemberRole, createTeam, listMembers, removeMember, teamTree, updateTeam } from "../services/teams.ts";
 
 export type ApiEnv = { Variables: { user: SessionUser | null; access: Access } };
@@ -193,21 +196,21 @@ export function apiRoutes(deps: Deps) {
     const access = c.get("access");
     const orgId = requireOrg(access);
     const isCoordinator = access.user.user_type === "coordinator" && [...access.roles.values()].includes("coordinator");
+    // Coordinators get the versioned editor view (K3). Callers get approved, non-stale items only.
+    if (isCoordinator) return c.json(await listSheetViews(deps, orgId, c.req.query("campaign")));
     const sheets = await collections(deps.db).fact_sheets.find({ org_id: orgId }).sort({ created_at: -1 }).toArray();
-    // Callers see approved items only.
-    const visible: FactSheetDoc[] = isCoordinator ? sheets : sheets.map((s) => ({ ...s, items: s.items.filter((i) => i.status === "approved") }));
+    const visible: FactSheetDoc[] = sheets.map((s) => ({ ...s, items: callerVisibleItems(s.items, nowOf(deps), staleDays(deps)) }));
     return c.json({ fact_sheets: visible });
   });
 
+  // Kept for S2 clients: approves the item's current draft version (second-approver rule applies).
   api.post("/fact-sheets/:id/items/:itemId/approve", async (c) => {
     const access = c.get("access");
     const orgId = requireCoordinator(access);
-    const res = await collections(deps.db).fact_sheets.updateOne(
-      { _id: c.req.param("id"), org_id: orgId, "items.id": c.req.param("itemId") },
-      { $set: { "items.$.status": "approved" } },
-    );
-    if (!res.matchedCount) throw notFound();
-    await appendAudit(deps.db, { org_id: orgId, who: access.user.id, action: "fact.approve", target_type: "fact_item", target_id: c.req.param("itemId") });
+    await loadSheetV(deps, orgId, c.req.param("id"));
+    const draft = await collections(deps.db).fact_item_versions.find({ org_id: orgId, sheet_id: c.req.param("id"), item_id: c.req.param("itemId"), status: "draft" }).sort({ version: -1 }).limit(1).next();
+    if (!draft) throw notFound();
+    await approveFactVersion(deps, access, orgId, draft.sheet_id, draft.item_id, draft.version);
     return c.json({ ok: true });
   });
 
@@ -253,5 +256,6 @@ export function apiRoutes(deps: Deps) {
     return c.body(csv);
   });
 
+  dashboardRoutes(api, deps); // K3 coordinator dashboard routes
   return api;
 }

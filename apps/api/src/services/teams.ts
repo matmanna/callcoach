@@ -29,7 +29,8 @@ export async function createTeam(deps: Deps, access: Access, orgId: string, inpu
   const parent = requireRole(access, parentId, "coordinator");
   const all = new Map((await c.teams.find({ org_id: orgId }).toArray()).map((t) => [t._id, t]));
   if (depthOf(parent, all) + 1 > MAX_TEAM_DEPTH) throw new HttpError(422, "max_depth", { max_depth: MAX_TEAM_DEPTH });
-  const team: TeamDoc = { _id: randomUUID(), org_id: orgId, name: input.name, focus: input.focus, parent_team_id: parent._id, archived_at: null, created_at: nowOf(deps) };
+  const timezone = access.user.timezone ?? parent.timezone ?? null;
+  const team: TeamDoc = { _id: randomUUID(), org_id: orgId, name: input.name, focus: input.focus, parent_team_id: parent._id, timezone, archived_at: null, created_at: nowOf(deps) };
   await withTx(deps.client, async (session) => {
     await c.teams.insertOne(team, { session });
     await appendAudit(deps.db, { org_id: orgId, who: access.user.id, action: "team.create", target_type: "team", target_id: team._id }, session);
