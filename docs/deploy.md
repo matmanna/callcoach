@@ -12,7 +12,7 @@ browser ──> CloudFront ──┬─ default: S3 (private, OAC) ─ the Vite 
 - One origin for the browser, so Better Auth's session cookie is same-site and no CORS is needed.
 - The Function URL is public, so CloudFront adds a secret `X-Origin-Verify` header and the handler returns 403 without it.
 - Secrets live in one Secrets Manager secret, `callcoach/prod` (JSON: `MONGODB_URI`, `BETTER_AUTH_SECRET`, `ORIGIN_VERIFY`). The SAM template reads them at deploy time. They are never in git.
-- No email service yet: with `INVITE_LINK_IN_RESPONSE=1` the API returns the invite link to the coordinator, and the app copies it to the clipboard.
+- No email service yet: the API returns the invite link to the coordinator, who sends it directly.
 
 ## One-time setup
 

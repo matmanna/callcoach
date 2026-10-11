@@ -6,6 +6,7 @@ import { api, errorMessage } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router";
+import { toast } from "sonner";
 import { AuthCard } from "./AuthCard.tsx";
 
 /** Coordinator onboarding: profile + organization, then the first team. */
@@ -19,7 +20,6 @@ export function Onboarding() {
   const [busy, setBusy] = useState(false);
   if (loading) return null;
   if (!me) return <Navigate to="/sign-in" replace />;
-  if (me.user.user_type !== "coordinator") return <Navigate to="/home" replace />;
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -32,6 +32,27 @@ export function Onboarding() {
       setBusy(false);
     }
   };
+
+  if (me.pending_invites.length > 0)
+    return (
+      <AuthCard title="Your invitations" description="Accept a team invitation to finish signing in.">
+        <FieldGroup>
+          {me.pending_invites.map((invite) => (
+            <div key={invite.id} className="rounded-md border p-4">
+              <p className="font-medium">{invite.team_name}</p>
+              <p className="text-sm text-muted-foreground">{invite.org_name} invited you as a {invite.role}.</p>
+              {invite.team_focus ? <p className="mt-1 text-sm text-muted-foreground">Team focus: {invite.team_focus}</p> : null}
+              <Button className="mt-3" onClick={() => run(async () => { const result = await api<{ call_count: number }>(`/onboarding/invites/${invite.id}/accept`, { body: {} }); await refresh(); toast.success(`${result.call_count} calls are ready for your team.`); navigate("/app", { replace: true }); })} disabled={busy}>
+                Join team
+              </Button>
+            </div>
+          ))}
+          {error ? <FieldError>{error}</FieldError> : null}
+        </FieldGroup>
+      </AuthCard>
+    );
+
+  if (me.user.user_type !== "coordinator") return <Navigate to="/home" replace />;
 
   if (step === 1)
     return (

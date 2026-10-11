@@ -37,7 +37,7 @@ export function QueuePage() {
   };
   const limit = async (id: string, action: "approve" | "reject") => {
     try {
-      await api(withQuery(`/pending-limits/${id}/decision`, scope.q), { body: { action } });
+      await api(`/pending-limits/${id}/${action}`, { body: {} });
       toast.success(action === "approve" ? "Limit written to the donor record" : "Limit rejected");
       pl.reload();
     } catch (e) {

@@ -34,6 +34,11 @@ export { Import } from "@/pages/coordinator/Import";
 export { Invites } from "@/pages/coordinator/Invites";
 export { Members } from "@/pages/coordinator/Members";
 export { Teams } from "@/pages/coordinator/Teams";
+export { Brief } from "@/pages/call/Brief";
+export { DonorList } from "@/pages/call/DonorList";
+export { LiveCall } from "@/pages/call/LiveCall";
+export { Warmth } from "@/pages/call/Warmth";
+export { PostCall } from "@/pages/call/PostCall";
 export { Profile } from "@/pages/volunteer/Profile";
 export { VolunteerHome } from "@/pages/volunteer/VolunteerHome";
 

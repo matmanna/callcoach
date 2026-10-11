@@ -9,6 +9,7 @@ export const SCHEMA_VERSION = 3;
 export const SCHEMA_CHANGES: Record<number, string> = {
   3: "K3: donor_limits, fact_item_versions, rubric_versions, knowledge_entries, handoff_packets, patterns; optional donors.region and rubrics.version.",
   1: "S2: identity, teams, memberships, invites, donors, gifts, campaigns, fact_sheets, rubrics, seed_runs, audit_log.",
+  2: "P2: call_logs, call_flags, pending_limits, follow_ups, warmth_ratings and scoped idempotency indexes.",
 };
 
 export const APP_ROLE = "stewardship_app";
@@ -43,6 +44,12 @@ export async function initDb(db: Db, log: (s: string) => void = () => {}): Promi
   await db.collection("patterns").createIndex({ org_id: 1, status: 1 });
   await db.collection("donors").createIndex({ org_id: 1, region: 1 });
   await db.collection("seed_runs").createIndex({ org_id: 1, created_at: -1 });
+  await db.collection("call_logs").createIndex({ org_id: 1, donor_id: 1, approved_at: -1 });
+  await db.collection("call_logs").createIndex({ org_id: 1, caller_id: 1, idempotency_key: 1 }, { unique: true, partialFilterExpression: { idempotency_key: { $type: "string" } } });
+  await db.collection("call_flags").createIndex({ org_id: 1, team_id: 1, status: 1 });
+  await db.collection("pending_limits").createIndex({ org_id: 1, team_id: 1, status: 1 });
+  await db.collection("follow_ups").createIndex({ org_id: 1, donor_id: 1, status: 1 });
+  await db.collection("warmth_ratings").createIndex({ org_id: 1, call_id: 1 }, { unique: true });
   await db.collection(AUDIT_COLLECTION).createIndex({ org_id: 1, ts: -1 });
   await db.collection(AUDIT_COLLECTION).createIndex({ org_id: 1, target_id: 1, ts: -1 });
   log("indexes ensured");

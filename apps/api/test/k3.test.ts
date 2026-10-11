@@ -301,15 +301,15 @@ describe("coordinator queue", () => {
     const pid = randomUUID();
     await p2(h.deps.db).pending_limits.insertOne({ _id: pid, org_id: orgId, team_id: student, donor_id: d._id, log_id: log._id, limit: "Do not call (donor request)", status: "pending", created_at: ago(1), decided_by: null, decided_at: null });
     expect((await coord.get("/api/pending-limits")).json.pending_limits).toHaveLength(1);
-    expect((await coord.post(`/api/pending-limits/${pid}/decision`, { action: "approve" })).status).toBe(200);
+    expect((await coord.post(`/api/pending-limits/${pid}/approve`, {})).status).toBe(200);
     expect((await h.deps.db.collection("donors").findOne({ _id: d._id as never }))?.limits).toContain("Do not call (donor request)");
     const fu = randomUUID();
     await p2(h.deps.db).follow_ups.insertOne({ _id: fu, org_id: orgId, donor_id: d._id, team_id: student, owner_user_id: callerId, action: "Send receipt", due_date: ymd(ago(2)), status: "open", created_from_log_id: log._id, created_at: ago(5), closed_at: null, last_note: null });
     const listed = (await coord.get("/api/follow-ups?overdue=true")).json.follow_ups as Array<{ id: string; overdue: boolean; donor_ref: string }>;
     expect(listed.find((f) => f.id === fu)?.overdue).toBe(true);
-    expect((await coord.post(`/api/follow-ups/${fu}/cancel`, {})).status).toBe(400);
-    expect((await coord.post(`/api/follow-ups/${fu}/cancel`, { note: "Donor asked us to stop." })).status).toBe(200);
-    expect((await caller.post(`/api/follow-ups/${fu}/cancel`, { note: "x" })).status).toBe(403);
+    expect((await coord.post(`/api/follow-ups/${fu}/cancel`, { idempotency_key: "cancel-key-0001" })).status).toBe(400); // note required
+    expect((await coord.post(`/api/follow-ups/${fu}/cancel`, { idempotency_key: "cancel-key-0002", note: "Donor asked us to stop." })).status).toBe(200);
+    expect((await caller.post(`/api/follow-ups/${fu}/cancel`, { idempotency_key: "cancel-key-0003", note: "x" })).status).toBe(403);
   });
   it("calls list uses donor references, not names; detail has fields only", async () => {
     const list = (await coord.get("/api/calls?limit=5")).json;

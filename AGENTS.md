@@ -31,7 +31,7 @@ The one-sentence angle: **nothing leaves the volunteer's device until a person h
 - Auth: Better Auth (email and password) with the MongoDB adapter, mounted at `/api/auth/*`. User type (`coordinator` | `volunteer`) lives on the user; team membership is separate.
 - AWS: Bedrock Converse API via `@aws-sdk/client-bedrock-runtime`; Comprehend optional.
 - Tests: Vitest.
-- Out of scope for the hackathon: Tauri, Rust, Python, Presidio, vector search, Cognito, Step Functions.
+- Out of scope for the hackathon: Rust beyond generated Tauri shell files, Python, Presidio, vector search, Cognito, Step Functions. Tauri is allowed under `apps/desktop` as a prototype shell for the local AI flow.
 
 ## Repo layout
 

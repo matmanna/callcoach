@@ -1,0 +1,21 @@
+{
+  "outcome": [
+    { "outcome": "voicemail", "triggers": ["voicemail", "left a message", "left a voicemail"] },
+    { "outcome": "no_answer", "triggers": ["no answer", "didn't pick up", "did not pick up", "nobody answered"] },
+    { "outcome": "declined", "triggers": ["not interested", "declined", "didn't want to talk", "did not want to talk"] },
+    { "outcome": "rescheduled", "triggers": ["call back", "rescheduled", "try again", "another time"] }
+  ],
+  "preference": [
+    { "preference": "stop_calls", "triggers": ["stop calling", "take me off", "don't call", "do not call", "remove me"] },
+    { "preference": "email_preferred", "triggers": ["email me", "prefer email", "prefers email", "by email", "rather email"] },
+    { "preference": "call_later", "triggers": ["call back", "call later", "another time", "try again"] }
+  ],
+  "flag": [
+    { "label": "OFF_SCRIPT_CLAIM", "triggers": ["guaranteed outcome", "guaranteed return", "promised guaranteed"] }
+  ],
+  "follow_up": [
+    { "triggers": ["send the program summary", "send program summary", "program summary"], "action": "Send the program summary" },
+    { "triggers": ["send a receipt", "receipt"], "action": "Send a gift receipt" },
+    { "triggers": ["call back", "call later", "another time", "try again"], "action": "Call back at the time the donor chose" }
+  ]
+}

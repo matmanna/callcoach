@@ -1,6 +1,6 @@
 /**
- * Read shapes for the P2 collections (call_logs, flags, pending_limits, follow_ups,
- * warmth_ratings), exactly as Prompt P2 specifies them. K3 reads them and applies coordinator
+ * Read shapes for the P2 collections (call_logs, call_flags, pending_limits, follow_ups,
+ * warmth_ratings), matching packages/shared/src/postcall.ts. K3 reads them and applies coordinator
  * decisions (queue, pending limits, cancel). When P2 merges, replace these with its shared types.
  * Nothing here has a note, transcript, or audio field.
  */
@@ -87,7 +87,7 @@ export interface WarmthRow {
 export function p2(db: Db) {
   return {
     call_logs: db.collection<CallLogRow>("call_logs"),
-    flags: db.collection<FlagRow>("flags"),
+    flags: db.collection<FlagRow>("call_flags"),
     pending_limits: db.collection<PendingLimitRow>("pending_limits"),
     follow_ups: db.collection<FollowUpRow>("follow_ups"),
     warmth_ratings: db.collection<WarmthRow>("warmth_ratings"),

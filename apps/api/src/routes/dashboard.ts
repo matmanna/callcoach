@@ -3,7 +3,6 @@
  * session and a loaded Access. Scope (org and team) is resolved here, server-side, for every view.
  */
 import {
-  CancelFollowUp,
   DeleteDossier,
   FactApprove,
   FactReverify,
@@ -12,7 +11,6 @@ import {
   KnowledgeCreate,
   KnowledgeUpdate,
   LimitChange,
-  LimitDecision,
   PreferenceAdd,
   QueueBatchResolve,
   QueueDecision,
@@ -44,7 +42,7 @@ import {
   updateEntry,
   updateRubric,
 } from "../services/dashboard/knowledge.ts";
-import { batchResolve, cancelFollowUp, decideFlag, decidePendingLimit, getCall, listCalls, listFollowUps, listPendingLimits, listQueue } from "../services/dashboard/ops.ts";
+import { batchResolve, decideFlag, getCall, listCalls, listFollowUps, listPendingLimits, listQueue } from "../services/dashboard/ops.ts";
 import { overview, teamsPanel } from "../services/dashboard/overview.ts";
 import { resolveScope, type Scope } from "../services/dashboard/scope.ts";
 import { displayNames } from "../services/dashboard/util.ts";
@@ -146,17 +144,9 @@ export function dashboardRoutes(api: Hono<ApiEnv>, deps: Deps) {
     return c.json(await decideFlag(deps, scopeOf(c), access(c), c.req.param("id"), body));
   });
   api.get("/pending-limits", async (c) => c.json(await listPendingLimits(deps, scopeOf(c))));
-  api.post("/pending-limits/:id/decision", async (c) => {
-    const body = parseBody(LimitDecision, await jsonBody(c));
-    return c.json(await decidePendingLimit(deps, scopeOf(c), access(c), c.req.param("id"), body));
-  });
   api.get("/follow-ups", async (c) => {
     const q = c.req.query();
     return c.json(await listFollowUps(deps, scopeOf(c), { status: q.status, overdue: bool(q.overdue), owner_id: q.owner_id }));
-  });
-  api.post("/follow-ups/:id/cancel", async (c) => {
-    const body = parseBody(CancelFollowUp, await jsonBody(c));
-    return c.json(await cancelFollowUp(deps, scopeOf(c), access(c), c.req.param("id"), body.note));
   });
 
   // ---------- fact sheets ----------

@@ -1,0 +1,1217 @@
+{
+  "excerpts": [
+    {
+      "id": "x01-easy-distress",
+      "donor": {
+        "id": "d-201",
+        "first_name": "Harriet",
+        "last_name": "Penwarden",
+        "spouse_name": "Clement",
+        "employer": "Stonebridge Library",
+        "town": "Kestrel Falls",
+        "campaign": "Spring Youth Appeal 2026",
+        "gift_band": "$50-$99",
+        "past_gift_count": 4,
+        "last_gift_band": "$50-$99",
+        "limits": []
+      },
+      "volunteer_name": "Priya Valcourt",
+      "turns": [
+        {
+          "id": "x01-t01",
+          "speaker": "volunteer",
+          "t": 0,
+          "raw": "Hello, may I speak with Harriet Penwarden? This is Priya Valcourt, a volunteer with Brightpath Youth Alliance."
+        },
+        {
+          "id": "x01-t02",
+          "speaker": "donor",
+          "t": 5200,
+          "raw": "This is Harriet. What can I do for you?"
+        },
+        {
+          "id": "x01-t03",
+          "speaker": "volunteer",
+          "t": 9800,
+          "raw": "I'm only calling to thank you for your recent gift to the Spring Youth Appeal. It really does help."
+        },
+        {
+          "id": "x01-t04",
+          "speaker": "donor",
+          "t": 16100,
+          "raw": "Oh, that's kind of you. It has been a hard spring. My father died in April, and Clement and I have been sorting through his things ever since."
+        },
+        {
+          "id": "x01-t05",
+          "speaker": "volunteer",
+          "t": 25400,
+          "raw": "I'm so sorry. Thank you for still thinking of the students during all of that."
+        },
+        {
+          "id": "x01-t06",
+          "speaker": "donor",
+          "t": 31900,
+          "raw": "Dad loved that program. I miss him terribly. We held the funeral at the little chapel on 18 Orchard Lane, right here in Kestrel Falls."
+        },
+        {
+          "id": "x01-t07",
+          "speaker": "volunteer",
+          "t": 41200,
+          "raw": "That sounds like a lovely way to remember him. Is there anything you'd like the office to know?"
+        },
+        {
+          "id": "x01-t08",
+          "speaker": "donor",
+          "t": 48700,
+          "raw": "Only that you can reach me at 412-555-0187 if the office needs anything. I still work at Stonebridge Library most weekdays."
+        },
+        {
+          "id": "x01-t09",
+          "speaker": "volunteer",
+          "t": 57300,
+          "raw": "Thank you, Harriet. Please take good care of yourself."
+        },
+        {
+          "id": "x01-t10",
+          "speaker": "donor",
+          "t": 61800,
+          "raw": "You too, Priya. Goodbye now."
+        }
+      ],
+      "planted": [
+        {
+          "value": "Harriet Penwarden",
+          "type": "NAME"
+        },
+        {
+          "value": "Harriet",
+          "type": "NAME"
+        },
+        {
+          "value": "Clement",
+          "type": "NAME"
+        },
+        {
+          "value": "Priya Valcourt",
+          "type": "NAME"
+        },
+        {
+          "value": "Priya",
+          "type": "NAME"
+        },
+        {
+          "value": "18 Orchard Lane",
+          "type": "ADDRESS"
+        },
+        {
+          "value": "Kestrel Falls",
+          "type": "TOWN"
+        },
+        {
+          "value": "412-555-0187",
+          "type": "PHONE"
+        },
+        {
+          "value": "Stonebridge Library",
+          "type": "EMPLOYER"
+        },
+        {
+          "value": "father died",
+          "type": "FAMILY"
+        }
+      ],
+      "expected_flags": [
+        "DISTRESS"
+      ],
+      "notes": "Easy case. Standard formats; phrase rule and distress triggers present.",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "x02-easy-stop-contact",
+      "donor": {
+        "id": "d-202",
+        "first_name": "Desmond",
+        "last_name": "Arkwright",
+        "spouse_name": "Lorna",
+        "employer": "Halvorsen Freight",
+        "town": "Pell Harbor",
+        "campaign": "Spring Youth Appeal 2026",
+        "gift_band": "$250-$499",
+        "past_gift_count": 9,
+        "last_gift_band": "$250-$499",
+        "limits": [
+          "Mail only"
+        ]
+      },
+      "volunteer_name": "Marcus Oyelaran",
+      "turns": [
+        {
+          "id": "x02-t01",
+          "speaker": "volunteer",
+          "t": 0,
+          "raw": "Good evening, is this Desmond Arkwright? My name is Marcus Oyelaran, and I volunteer with Brightpath Youth Alliance."
+        },
+        {
+          "id": "x02-t02",
+          "speaker": "donor",
+          "t": 6100,
+          "raw": "Yes. Is this another fundraising call? We get a lot of those."
+        },
+        {
+          "id": "x02-t03",
+          "speaker": "volunteer",
+          "t": 11500,
+          "raw": "No, sir. I'm only calling to say thank you for your gift last month."
+        },
+        {
+          "id": "x02-t04",
+          "speaker": "donor",
+          "t": 16900,
+          "raw": "Well, thank you, but please stop calling this number. Lorna and I have had three calls this month already, and she works nights at Halvorsen Freight."
+        },
+        {
+          "id": "x02-t05",
+          "speaker": "volunteer",
+          "t": 26300,
+          "raw": "I understand, and I'm sorry about that. I will pass your request on to the office tonight, and I'll make sure it is written down clearly."
+        },
+        {
+          "id": "x02-t06",
+          "speaker": "donor",
+          "t": 33000,
+          "raw": "Take me off the phone list. If you must send something, write to 2209 Bellweather Road in Pell Harbor."
+        },
+        {
+          "id": "x02-t07",
+          "speaker": "volunteer",
+          "t": 41800,
+          "raw": "Of course. Would email be all right for receipts instead of phone calls?"
+        },
+        {
+          "id": "x02-t08",
+          "speaker": "donor",
+          "t": 47600,
+          "raw": "Email is fine. It's d.arkwright@example.net. Nothing else, please."
+        },
+        {
+          "id": "x02-t09",
+          "speaker": "volunteer",
+          "t": 54200,
+          "raw": "Understood. Thank you again for supporting the students, Mr. Arkwright."
+        },
+        {
+          "id": "x02-t10",
+          "speaker": "donor",
+          "t": 59900,
+          "raw": "You're welcome. Goodnight, and thanks for listening."
+        }
+      ],
+      "planted": [
+        {
+          "value": "Desmond Arkwright",
+          "type": "NAME"
+        },
+        {
+          "value": "Arkwright",
+          "type": "NAME"
+        },
+        {
+          "value": "Lorna",
+          "type": "NAME"
+        },
+        {
+          "value": "Marcus Oyelaran",
+          "type": "NAME"
+        },
+        {
+          "value": "Halvorsen Freight",
+          "type": "EMPLOYER"
+        },
+        {
+          "value": "2209 Bellweather Road",
+          "type": "ADDRESS"
+        },
+        {
+          "value": "Pell Harbor",
+          "type": "TOWN"
+        },
+        {
+          "value": "d.arkwright@example.net",
+          "type": "EMAIL"
+        }
+      ],
+      "expected_flags": [
+        "STOP_CONTACT"
+      ],
+      "notes": "Easy case. Direct stop-contact triggers ('stop calling', 'take me off').",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "x03-easy-off-script-tax",
+      "donor": {
+        "id": "d-203",
+        "first_name": "Imogen",
+        "last_name": "Thackeray",
+        "spouse_name": "Rafael",
+        "employer": "Corrigan and Webb",
+        "town": "Ashby Cross",
+        "campaign": "Spring Gala 2026",
+        "gift_band": "$500-$999",
+        "past_gift_count": 3,
+        "last_gift_band": "$250-$499",
+        "limits": []
+      },
+      "volunteer_name": "Tobias Wren",
+      "turns": [
+        {
+          "id": "x03-t01",
+          "speaker": "volunteer",
+          "t": 0,
+          "raw": "Hi, is this Imogen Thackeray? This is Tobias Wren with Brightpath Youth Alliance."
+        },
+        {
+          "id": "x03-t02",
+          "speaker": "donor",
+          "t": 4700,
+          "raw": "Speaking. Hello, Tobias."
+        },
+        {
+          "id": "x03-t03",
+          "speaker": "volunteer",
+          "t": 8200,
+          "raw": "I wanted to thank you for your gift to the youth program and for coming to the spring gala."
+        },
+        {
+          "id": "x03-t04",
+          "speaker": "donor",
+          "t": 14600,
+          "raw": "You're welcome. Rafael and I were glad to help. Could I ask you something about taxes, though?"
+        },
+        {
+          "id": "x03-t05",
+          "speaker": "volunteer",
+          "t": 21000,
+          "raw": "Sure, go ahead."
+        },
+        {
+          "id": "x03-t06",
+          "speaker": "donor",
+          "t": 23900,
+          "raw": "Is the whole amount deductible? We also bought two gala tickets with dinner included."
+        },
+        {
+          "id": "x03-t07",
+          "speaker": "volunteer",
+          "t": 30700,
+          "raw": "Yes, everything you give us is one hundred percent tax deductible, including the gala dinner tickets. You can write off all of it, no question."
+        },
+        {
+          "id": "x03-t08",
+          "speaker": "donor",
+          "t": 40300,
+          "raw": "Really? People at Corrigan and Webb told me the dinner part usually isn't."
+        },
+        {
+          "id": "x03-t09",
+          "speaker": "volunteer",
+          "t": 47000,
+          "raw": "I'm pretty sure it all counts. The receipt goes to 77 Sparrow Hill Drive, right?"
+        },
+        {
+          "id": "x03-t10",
+          "speaker": "donor",
+          "t": 53800,
+          "raw": "Yes, that's the house in Ashby Cross. Or call me on 603.555.0114 if anything changes."
+        },
+        {
+          "id": "x03-t11",
+          "speaker": "volunteer",
+          "t": 61200,
+          "raw": "Will do. Thanks again, Imogen. Enjoy the rest of your evening."
+        },
+        {
+          "id": "x03-t12",
+          "speaker": "donor",
+          "t": 66100,
+          "raw": "Thank you. Bye now."
+        }
+      ],
+      "planted": [
+        {
+          "value": "Imogen Thackeray",
+          "type": "NAME"
+        },
+        {
+          "value": "Imogen",
+          "type": "NAME"
+        },
+        {
+          "value": "Rafael",
+          "type": "NAME"
+        },
+        {
+          "value": "Tobias Wren",
+          "type": "NAME"
+        },
+        {
+          "value": "Tobias",
+          "type": "NAME"
+        },
+        {
+          "value": "Corrigan and Webb",
+          "type": "EMPLOYER"
+        },
+        {
+          "value": "77 Sparrow Hill Drive",
+          "type": "ADDRESS"
+        },
+        {
+          "value": "Ashby Cross",
+          "type": "TOWN"
+        },
+        {
+          "value": "603.555.0114",
+          "type": "PHONE"
+        }
+      ],
+      "expected_flags": [
+        "OFF_SCRIPT_CLAIM"
+      ],
+      "notes": "Easy case. Volunteer makes an incorrect tax statement (gala dinner value is generally not deductible). No tag represents a volunteer claim, so the note cannot carry it.",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "x04-negative-warm",
+      "donor": {
+        "id": "d-204",
+        "first_name": "Beatrice",
+        "last_name": "Kowalczyk",
+        "spouse_name": "Henryk",
+        "employer": "Fernhill Elementary",
+        "town": "Larchmont Mills",
+        "campaign": "Spring Youth Appeal 2026",
+        "gift_band": "$100-$249",
+        "past_gift_count": 12,
+        "last_gift_band": "$100-$249",
+        "limits": []
+      },
+      "volunteer_name": "Sam Delacroix",
+      "turns": [
+        {
+          "id": "x04-t01",
+          "speaker": "volunteer",
+          "t": 0,
+          "raw": "Hi, is this Beatrice Kowalczyk? This is Sam Delacroix calling from Brightpath Youth Alliance."
+        },
+        {
+          "id": "x04-t02",
+          "speaker": "donor",
+          "t": 4900,
+          "raw": "It is! Hello, Sam. How lovely to hear from you."
+        },
+        {
+          "id": "x04-t03",
+          "speaker": "volunteer",
+          "t": 9300,
+          "raw": "I'm calling to say thank you for your gift this spring. The students really appreciate it, and so do the mentors who work with them every week."
+        },
+        {
+          "id": "x04-t04",
+          "speaker": "donor",
+          "t": 15200,
+          "raw": "Oh, it's my pleasure. I taught at Fernhill Elementary for years, so kids are close to my heart."
+        },
+        {
+          "id": "x04-t05",
+          "speaker": "volunteer",
+          "t": 22100,
+          "raw": "That's wonderful. How long were you teaching there?"
+        },
+        {
+          "id": "x04-t06",
+          "speaker": "donor",
+          "t": 26800,
+          "raw": "Twenty-six years. Henryk still teases me that I grade the grocery list before we go shopping."
+        },
+        {
+          "id": "x04-t07",
+          "speaker": "volunteer",
+          "t": 34100,
+          "raw": "That's a great story. Do you have a favorite memory from those years?"
+        },
+        {
+          "id": "x04-t08",
+          "speaker": "donor",
+          "t": 39500,
+          "raw": "The spring concerts, every single year. Half of Larchmont Mills used to squeeze into that gym to hear the kids sing."
+        },
+        {
+          "id": "x04-t09",
+          "speaker": "volunteer",
+          "t": 48000,
+          "raw": "That sounds lovely. Thank you again for your support, Beatrice. It means a lot to us."
+        },
+        {
+          "id": "x04-t10",
+          "speaker": "donor",
+          "t": 54600,
+          "raw": "Thank you for calling, dear. Have a good evening."
+        }
+      ],
+      "planted": [
+        {
+          "value": "Beatrice Kowalczyk",
+          "type": "NAME"
+        },
+        {
+          "value": "Beatrice",
+          "type": "NAME"
+        },
+        {
+          "value": "Henryk",
+          "type": "NAME"
+        },
+        {
+          "value": "Sam Delacroix",
+          "type": "NAME"
+        },
+        {
+          "value": "Sam",
+          "type": "NAME"
+        },
+        {
+          "value": "Fernhill Elementary",
+          "type": "EMPLOYER"
+        },
+        {
+          "value": "Larchmont Mills",
+          "type": "TOWN"
+        }
+      ],
+      "expected_flags": [],
+      "notes": "Negative case. Warm, ordinary call; no flag expected.",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "x05-unlisted-names",
+      "donor": {
+        "id": "d-205",
+        "first_name": "Clarence",
+        "last_name": "Obuya",
+        "employer": "Dunmore Rail Yard",
+        "town": "Wexley",
+        "campaign": "Spring Youth Appeal 2026",
+        "gift_band": "$100-$249",
+        "past_gift_count": 2,
+        "last_gift_band": "$50-$99",
+        "limits": []
+      },
+      "volunteer_name": "Aiyana Brooks",
+      "turns": [
+        {
+          "id": "x05-t01",
+          "speaker": "volunteer",
+          "t": 0,
+          "raw": "Hello, is this Clarence Obuya? I'm Aiyana Brooks, a volunteer with Brightpath Youth Alliance."
+        },
+        {
+          "id": "x05-t02",
+          "speaker": "donor",
+          "t": 5400,
+          "raw": "That's me. Brightpath! My nephew Kofi Mensah is in your mentoring sessions."
+        },
+        {
+          "id": "x05-t03",
+          "speaker": "volunteer",
+          "t": 11700,
+          "raw": "Oh, how nice. I'm calling to thank you for your gift this spring."
+        },
+        {
+          "id": "x05-t04",
+          "speaker": "donor",
+          "t": 16900,
+          "raw": "Happy to do it. Kofi talks about his mentor every Sunday dinner. My neighbor Doris Albescu even drives him there when I'm on shift."
+        },
+        {
+          "id": "x05-t05",
+          "speaker": "volunteer",
+          "t": 26200,
+          "raw": "That's a real team effort. Is there anything you'd like to know about the program?"
+        },
+        {
+          "id": "x05-t06",
+          "speaker": "donor",
+          "t": 31800,
+          "raw": "What does he actually do in the sessions? He just says they talk."
+        },
+        {
+          "id": "x05-t07",
+          "speaker": "volunteer",
+          "t": 37500,
+          "raw": "Students meet with a trained mentor each week, and they work on goals they pick themselves."
+        },
+        {
+          "id": "x05-t08",
+          "speaker": "donor",
+          "t": 45000,
+          "raw": "Good. I work long hours at Dunmore Rail Yard, so I'm glad someone in Wexley is keeping him busy."
+        },
+        {
+          "id": "x05-t09",
+          "speaker": "volunteer",
+          "t": 53400,
+          "raw": "We're glad he's with us. Is there a good number for the office to reach you?"
+        },
+        {
+          "id": "x05-t10",
+          "speaker": "donor",
+          "t": 58900,
+          "raw": "Use 5705550163, that's my cell. Thanks for calling, Aiyana."
+        },
+        {
+          "id": "x05-t11",
+          "speaker": "volunteer",
+          "t": 65000,
+          "raw": "Thank you, Mr. Obuya. Have a good night."
+        }
+      ],
+      "planted": [
+        {
+          "value": "Clarence Obuya",
+          "type": "NAME"
+        },
+        {
+          "value": "Obuya",
+          "type": "NAME"
+        },
+        {
+          "value": "Aiyana Brooks",
+          "type": "NAME"
+        },
+        {
+          "value": "Aiyana",
+          "type": "NAME"
+        },
+        {
+          "value": "Kofi Mensah",
+          "type": "NAME"
+        },
+        {
+          "value": "Kofi",
+          "type": "NAME"
+        },
+        {
+          "value": "Doris Albescu",
+          "type": "NAME"
+        },
+        {
+          "value": "Dunmore Rail Yard",
+          "type": "EMPLOYER"
+        },
+        {
+          "value": "Wexley",
+          "type": "TOWN"
+        },
+        {
+          "value": "5705550163",
+          "type": "PHONE"
+        }
+      ],
+      "expected_flags": [],
+      "notes": "Names not in the donor record: nephew Kofi Mensah and neighbor Doris Albescu. Known-identifier layer cannot catch them.",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "x06-spoken-phone",
+      "donor": {
+        "id": "d-206",
+        "first_name": "Winifred",
+        "last_name": "Ashdown",
+        "spouse_name": "Gerald",
+        "employer": "Marlow Textile Company",
+        "town": "Brannock",
+        "campaign": "Spring Youth Appeal 2026",
+        "gift_band": "$100-$249",
+        "past_gift_count": 6,
+        "last_gift_band": "$100-$249",
+        "limits": []
+      },
+      "volunteer_name": "Leon Fairweather",
+      "turns": [
+        {
+          "id": "x06-t01",
+          "speaker": "volunteer",
+          "t": 0,
+          "raw": "Good afternoon, may I speak with Winifred Ashdown? This is Leon Fairweather from Brightpath Youth Alliance."
+        },
+        {
+          "id": "x06-t02",
+          "speaker": "donor",
+          "t": 5800,
+          "raw": "Speaking, though everyone calls me Winnie. Hello, Leon."
+        },
+        {
+          "id": "x06-t03",
+          "speaker": "volunteer",
+          "t": 10400,
+          "raw": "Thank you so much for your gift this spring. I'm calling just to say how grateful we are."
+        },
+        {
+          "id": "x06-t04",
+          "speaker": "donor",
+          "t": 16900,
+          "raw": "Oh, you're welcome. Gerald and I give every year. We both retired from Marlow Textile Company and like to keep busy here in Brannock."
+        },
+        {
+          "id": "x06-t05",
+          "speaker": "volunteer",
+          "t": 26100,
+          "raw": "That's lovely. Would you like the program newsletter?"
+        },
+        {
+          "id": "x06-t06",
+          "speaker": "donor",
+          "t": 30200,
+          "raw": "Yes, but please email me, I hardly check the post. It's winnie dot ashdown at example dot com."
+        },
+        {
+          "id": "x06-t07",
+          "speaker": "volunteer",
+          "t": 38800,
+          "raw": "Got it. And is there a phone number in case the office has a question?"
+        },
+        {
+          "id": "x06-t08",
+          "speaker": "donor",
+          "t": 43500,
+          "raw": "Let me think. It's eight one four, five five five, zero one four two. The landline, not my mobile."
+        },
+        {
+          "id": "x06-t09",
+          "speaker": "volunteer",
+          "t": 52700,
+          "raw": "Thank you, Winnie. I'll make sure the office has it."
+        },
+        {
+          "id": "x06-t10",
+          "speaker": "donor",
+          "t": 57400,
+          "raw": "Lovely. Thanks for the call, Leon, and good luck with the rest of your list."
+        }
+      ],
+      "planted": [
+        {
+          "value": "Winifred Ashdown",
+          "type": "NAME"
+        },
+        {
+          "value": "Winnie",
+          "type": "NAME"
+        },
+        {
+          "value": "Gerald",
+          "type": "NAME"
+        },
+        {
+          "value": "Leon Fairweather",
+          "type": "NAME"
+        },
+        {
+          "value": "Leon",
+          "type": "NAME"
+        },
+        {
+          "value": "Marlow Textile Company",
+          "type": "EMPLOYER"
+        },
+        {
+          "value": "Brannock",
+          "type": "TOWN"
+        },
+        {
+          "value": "winnie dot ashdown at example dot com",
+          "type": "EMAIL"
+        },
+        {
+          "value": "eight one four, five five five, zero one four two",
+          "type": "PHONE"
+        }
+      ],
+      "expected_flags": [],
+      "notes": "Phone number and email spoken as words; nickname 'Winnie' not in the donor record. Regex layer cannot catch spoken digits.",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "x07-conversational-address",
+      "donor": {
+        "id": "d-207",
+        "first_name": "Agnes",
+        "last_name": "Merriweather",
+        "spouse_name": "Frank",
+        "employer": "Tollgate Veterinary Clinic",
+        "town": "Hollis Bend",
+        "campaign": "Spring Youth Appeal 2026",
+        "gift_band": "$50-$99",
+        "past_gift_count": 1,
+        "last_gift_band": "$50-$99",
+        "limits": []
+      },
+      "volunteer_name": "Ruth Okonkwo",
+      "turns": [
+        {
+          "id": "x07-t01",
+          "speaker": "volunteer",
+          "t": 0,
+          "raw": "Hi there, is this Agnes Merriweather? This is Ruth Okonkwo, volunteering with Brightpath Youth Alliance."
+        },
+        {
+          "id": "x07-t02",
+          "speaker": "donor",
+          "t": 5200,
+          "raw": "Yes, this is Agnes. Oh, you're the folks with the after-school mentors."
+        },
+        {
+          "id": "x07-t03",
+          "speaker": "volunteer",
+          "t": 10700,
+          "raw": "That's us. I'm calling to thank you for your first gift. We're so glad to have you."
+        },
+        {
+          "id": "x07-t04",
+          "speaker": "donor",
+          "t": 16500,
+          "raw": "Well, Frank and I just moved to Hollis Bend, and a neighbor told us about you."
+        },
+        {
+          "id": "x07-t05",
+          "speaker": "volunteer",
+          "t": 23300,
+          "raw": "Welcome to the area! Did the thank-you letter reach you at the new place?"
+        },
+        {
+          "id": "x07-t06",
+          "speaker": "donor",
+          "t": 28900,
+          "raw": "I don't think so. We're the blue house at three fifteen, um, Tamarack Avenue, the one past the church with the big oak out front."
+        },
+        {
+          "id": "x07-t07",
+          "speaker": "volunteer",
+          "t": 38600,
+          "raw": "Thank you, I'll let the office know so they can resend it this week."
+        },
+        {
+          "id": "x07-t08",
+          "speaker": "donor",
+          "t": 43200,
+          "raw": "Wonderful. I'm at Tollgate Veterinary Clinic most days, so the post is easier than catching me by phone."
+        },
+        {
+          "id": "x07-t09",
+          "speaker": "volunteer",
+          "t": 51000,
+          "raw": "Understood. Thanks again for your support, Agnes, and welcome to the neighborhood."
+        },
+        {
+          "id": "x07-t10",
+          "speaker": "donor",
+          "t": 57100,
+          "raw": "Thank you, Ruth. You have a nice evening."
+        }
+      ],
+      "planted": [
+        {
+          "value": "Agnes Merriweather",
+          "type": "NAME"
+        },
+        {
+          "value": "Agnes",
+          "type": "NAME"
+        },
+        {
+          "value": "Frank",
+          "type": "NAME"
+        },
+        {
+          "value": "Ruth Okonkwo",
+          "type": "NAME"
+        },
+        {
+          "value": "Ruth",
+          "type": "NAME"
+        },
+        {
+          "value": "Hollis Bend",
+          "type": "TOWN"
+        },
+        {
+          "value": "Tamarack Avenue",
+          "type": "ADDRESS"
+        },
+        {
+          "value": "three fifteen",
+          "type": "ADDRESS"
+        },
+        {
+          "value": "Tollgate Veterinary Clinic",
+          "type": "EMPLOYER"
+        }
+      ],
+      "expected_flags": [],
+      "notes": "Street address given conversationally with a spoken house number and a filler word; the address regex needs digits.",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "x08-grief-no-trigger",
+      "donor": {
+        "id": "d-208",
+        "first_name": "Maureen",
+        "last_name": "Talbot",
+        "spouse_name": "Tom",
+        "employer": "Riverside Credit Union",
+        "town": "Ellery Point",
+        "campaign": "Spring Youth Appeal 2026",
+        "gift_band": "$100-$249",
+        "past_gift_count": 15,
+        "last_gift_band": "$100-$249",
+        "limits": []
+      },
+      "volunteer_name": "Jonah Whitcombe",
+      "turns": [
+        {
+          "id": "x08-t01",
+          "speaker": "volunteer",
+          "t": 0,
+          "raw": "Hello, is this Maureen Talbot? This is Jonah Whitcombe from Brightpath Youth Alliance."
+        },
+        {
+          "id": "x08-t02",
+          "speaker": "donor",
+          "t": 5100,
+          "raw": "It is. Hello, Jonah."
+        },
+        {
+          "id": "x08-t03",
+          "speaker": "volunteer",
+          "t": 8600,
+          "raw": "I'm calling to thank you for your gift this spring. You've supported us for a long time."
+        },
+        {
+          "id": "x08-t04",
+          "speaker": "donor",
+          "t": 14800,
+          "raw": "Fifteen years now. Tom always wrote the cheque. The house has been so quiet since Tom's been gone."
+        },
+        {
+          "id": "x08-t05",
+          "speaker": "volunteer",
+          "t": 23300,
+          "raw": "That sounds really hard. Thank you for keeping the tradition going, and for telling me about him. I can hear how much he meant to you."
+        },
+        {
+          "id": "x08-t06",
+          "speaker": "donor",
+          "t": 29100,
+          "raw": "Some days I set out two cups for coffee without thinking. The neighbors here in Ellery Point have been good to me."
+        },
+        {
+          "id": "x08-t07",
+          "speaker": "volunteer",
+          "t": 37800,
+          "raw": "I'm glad you have people around you. Is there anything we can do for you?"
+        },
+        {
+          "id": "x08-t08",
+          "speaker": "donor",
+          "t": 43900,
+          "raw": "No, dear. Just keep doing good work with those kids. Tom coached their basketball team years ago, before he got sick."
+        },
+        {
+          "id": "x08-t09",
+          "speaker": "volunteer",
+          "t": 52600,
+          "raw": "We will. Thank you for sharing that with me, Maureen."
+        },
+        {
+          "id": "x08-t10",
+          "speaker": "donor",
+          "t": 57900,
+          "raw": "Thank you for listening. Goodbye, Jonah."
+        }
+      ],
+      "planted": [
+        {
+          "value": "Maureen Talbot",
+          "type": "NAME"
+        },
+        {
+          "value": "Maureen",
+          "type": "NAME"
+        },
+        {
+          "value": "Tom",
+          "type": "NAME"
+        },
+        {
+          "value": "Jonah Whitcombe",
+          "type": "NAME"
+        },
+        {
+          "value": "Jonah",
+          "type": "NAME"
+        },
+        {
+          "value": "Ellery Point",
+          "type": "TOWN"
+        }
+      ],
+      "expected_flags": [
+        "DISTRESS"
+      ],
+      "notes": "Grief without any phrase or cue trigger. Rules produce no FAMILY tag, so the note has nothing to flag.",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "x09-indirect-stop-contact",
+      "donor": {
+        "id": "d-209",
+        "first_name": "Odessa",
+        "last_name": "Pemberton",
+        "spouse_name": "Lionel",
+        "employer": "Quayside Dental",
+        "town": "Fallowmere",
+        "campaign": "Spring Youth Appeal 2026",
+        "gift_band": "$250-$499",
+        "past_gift_count": 5,
+        "last_gift_band": "$250-$499",
+        "limits": []
+      },
+      "volunteer_name": "Grace Halloran",
+      "turns": [
+        {
+          "id": "x09-t01",
+          "speaker": "volunteer",
+          "t": 0,
+          "raw": "Hi, is this Odessa Pemberton? This is Grace Halloran, a volunteer with Brightpath Youth Alliance."
+        },
+        {
+          "id": "x09-t02",
+          "speaker": "donor",
+          "t": 5600,
+          "raw": "Yes, this is Odessa."
+        },
+        {
+          "id": "x09-t03",
+          "speaker": "volunteer",
+          "t": 8900,
+          "raw": "I'm calling just to thank you for your generous gift this spring."
+        },
+        {
+          "id": "x09-t04",
+          "speaker": "donor",
+          "t": 14200,
+          "raw": "That's nice of you. I do appreciate the thought, but I'd rather you didn't reach out like this again."
+        },
+        {
+          "id": "x09-t05",
+          "speaker": "volunteer",
+          "t": 21800,
+          "raw": "I completely understand. May I ask if there's a way you'd prefer to hear from us?"
+        },
+        {
+          "id": "x09-t06",
+          "speaker": "donor",
+          "t": 27400,
+          "raw": "Honestly, Lionel and I give because we believe in it. We'll keep giving on our own schedule. Phone calls at home just aren't for us."
+        },
+        {
+          "id": "x09-t07",
+          "speaker": "volunteer",
+          "t": 36500,
+          "raw": "That makes sense, and thank you for being so clear with me. I'll make a note of it for the office tonight."
+        },
+        {
+          "id": "x09-t08",
+          "speaker": "donor",
+          "t": 41100,
+          "raw": "Thank you. I'm at Quayside Dental all week, and evenings in Fallowmere are family time."
+        },
+        {
+          "id": "x09-t09",
+          "speaker": "volunteer",
+          "t": 49700,
+          "raw": "Of course. Thank you again for supporting the students, Odessa. Have a good night."
+        },
+        {
+          "id": "x09-t10",
+          "speaker": "donor",
+          "t": 55300,
+          "raw": "You as well, Grace. Thank you for understanding. Goodbye."
+        }
+      ],
+      "planted": [
+        {
+          "value": "Odessa Pemberton",
+          "type": "NAME"
+        },
+        {
+          "value": "Odessa",
+          "type": "NAME"
+        },
+        {
+          "value": "Lionel",
+          "type": "NAME"
+        },
+        {
+          "value": "Grace Halloran",
+          "type": "NAME"
+        },
+        {
+          "value": "Grace",
+          "type": "NAME"
+        },
+        {
+          "value": "Quayside Dental",
+          "type": "EMPLOYER"
+        },
+        {
+          "value": "Fallowmere",
+          "type": "TOWN"
+        }
+      ],
+      "expected_flags": [
+        "STOP_CONTACT"
+      ],
+      "notes": "Indirect stop-contact request with no trigger phrase from cue-rules.json.",
+      "review_status": "unreviewed"
+    },
+    {
+      "id": "x10-mixed-hardship-program",
+      "donor": {
+        "id": "d-210",
+        "first_name": "Ignatius",
+        "last_name": "Fairbairn",
+        "spouse_name": "Celeste",
+        "employer": "Glenmore Plastics",
+        "town": "Port Aldridge",
+        "campaign": "Spring Youth Appeal 2026",
+        "gift_band": "$50-$99",
+        "past_gift_count": 8,
+        "last_gift_band": "$100-$249",
+        "limits": []
+      },
+      "volunteer_name": "Nadia Szabo",
+      "turns": [
+        {
+          "id": "x10-t01",
+          "speaker": "volunteer",
+          "t": 0,
+          "raw": "Hello, is this Ignatius Fairbairn? My name is Nadia Szabo, and I'm a volunteer with Brightpath Youth Alliance."
+        },
+        {
+          "id": "x10-t02",
+          "speaker": "donor",
+          "t": 5900,
+          "raw": "That's me. Hi, Nadia."
+        },
+        {
+          "id": "x10-t03",
+          "speaker": "volunteer",
+          "t": 9400,
+          "raw": "I'm calling to thank you for your gift this spring. We know you've been with us a long time."
+        },
+        {
+          "id": "x10-t04",
+          "speaker": "donor",
+          "t": 15600,
+          "raw": "Eight years. It was a smaller gift this time. Things have been tight since I lost my job at Glenmore Plastics in March."
+        },
+        {
+          "id": "x10-t05",
+          "speaker": "volunteer",
+          "t": 24200,
+          "raw": "Thank you for telling me. Every gift matters, truly, whatever the size."
+        },
+        {
+          "id": "x10-t06",
+          "speaker": "donor",
+          "t": 30000,
+          "raw": "Celeste says we should still do what we can. I may not manage anything next year, though, to be honest."
+        },
+        {
+          "id": "x10-t07",
+          "speaker": "volunteer",
+          "t": 38300,
+          "raw": "That's completely understandable. Is there anything you'd like to know about the program?"
+        },
+        {
+          "id": "x10-t08",
+          "speaker": "donor",
+          "t": 43600,
+          "raw": "Yes, actually. What does the mentoring cost per student? I like knowing where it goes."
+        },
+        {
+          "id": "x10-t09",
+          "speaker": "volunteer",
+          "t": 50800,
+          "raw": "I don't have that figure, but I can ask the office to send you the program budget summary."
+        },
+        {
+          "id": "x10-t10",
+          "speaker": "donor",
+          "t": 57900,
+          "raw": "That would be great. Send it to 506 Kittiwake Lane in Port Aldridge."
+        },
+        {
+          "id": "x10-t11",
+          "speaker": "volunteer",
+          "t": 64800,
+          "raw": "Will do. Thank you, Ignatius, and I hope things look up soon."
+        },
+        {
+          "id": "x10-t12",
+          "speaker": "donor",
+          "t": 70300,
+          "raw": "Thanks, Nadia. Take care."
+        }
+      ],
+      "planted": [
+        {
+          "value": "Ignatius Fairbairn",
+          "type": "NAME"
+        },
+        {
+          "value": "Ignatius",
+          "type": "NAME"
+        },
+        {
+          "value": "Celeste",
+          "type": "NAME"
+        },
+        {
+          "value": "Nadia Szabo",
+          "type": "NAME"
+        },
+        {
+          "value": "Nadia",
+          "type": "NAME"
+        },
+        {
+          "value": "Glenmore Plastics",
+          "type": "EMPLOYER"
+        },
+        {
+          "value": "506 Kittiwake Lane",
+          "type": "ADDRESS"
+        },
+        {
+          "value": "Port Aldridge",
+          "type": "TOWN"
+        }
+      ],
+      "expected_flags": [],
+      "notes": "Mixed signals: financial hardship plus a program question. Hardship is not a default-enabled flag. 'lost my job' contains the DISTRESS_LOSS trigger 'lost my', so rules may wrongly tag a family loss.",
+      "review_status": "unreviewed"
+    }
+  ]
+}

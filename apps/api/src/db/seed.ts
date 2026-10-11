@@ -10,6 +10,8 @@ import { onboardCoordinator } from "../services/orgs.ts";
 import { createTeam } from "../services/teams.ts";
 import { collections } from "./collections.ts";
 import { initDb } from "./init.ts";
+import { appendAudit } from "./audit.ts";
+import { withTx } from "./tx.ts";
 
 const ORG_NAME = "Brightpath Youth Alliance";
 const TEAMS = [
@@ -56,6 +58,15 @@ try {
   report("gifts", await commitImport(deps, access, orgId, "gifts", { file_name: "gifts.csv", content: seedFile("gifts.csv"), update_existing: true }));
   if (!(await c.fact_sheets.findOne({ org_id: orgId, name: "fact-sheet.json" }))) {
     report("fact_sheet", await commitImport(deps, access, orgId, "fact_sheet", { file_name: "fact-sheet.json", content: seedFile("fact-sheet.json"), update_existing: false, campaign_name: "Spring Youth Appeal 2026" }));
+  }
+  // The synthetic demo has one coordinator-approved fact ready for the pre-call brief.
+  const demoSheet = await c.fact_sheets.findOne({ org_id: orgId, name: "fact-sheet.json" });
+  const demoFact = demoSheet?.items[0];
+  if (demoSheet && demoFact?.status === "draft") {
+    await withTx(deps.client, async (session) => {
+      await c.fact_sheets.updateOne({ _id: demoSheet._id, org_id: orgId, items: { $elemMatch: { id: demoFact.id, status: "draft" } } }, { $set: { "items.$.status": "approved" } }, { session });
+      await appendAudit(deps.db, { org_id: orgId, who: sessionUser.id, action: "fact.approve", target_type: "fact_item", target_id: demoFact.id }, session);
+    });
   }
   if (!(await c.rubrics.findOne({ org_id: orgId, team_id: null }))) {
     report("rubric", await commitImport(deps, access, orgId, "rubric", { file_name: "rubric.json", content: seedFile("rubric.json"), update_existing: false, team_id: null }));

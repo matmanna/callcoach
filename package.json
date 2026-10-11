@@ -16,7 +16,10 @@
     "infra:build": "node infra/build-api.mjs",
     "infra:validate": "cd infra && sam validate --lint",
     "infra:deploy": "pnpm infra:build && cd infra && sam deploy --config-env",
-    "deploy:web": "infra/deploy-web.sh"
+    "deploy:web": "infra/deploy-web.sh",
+    "desktop:dev": "concurrently -k -n api,desktop -c green,cyan \"pnpm --filter @sc/api dev\" \"pnpm --filter @sc/desktop dev\"",
+    "desktop:build": "pnpm --filter @sc/desktop build",
+    "models:fetch": "pnpm --filter @sc/web models:fetch"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

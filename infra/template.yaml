@@ -20,11 +20,6 @@ Parameters:
   BedrockModelId:
     Type: String
     Default: ""
-  InviteLinkInResponse:
-    Type: String
-    Default: "1"
-    AllowedValues: ["0", "1"]
-    Description: No email service yet, so coordinators copy invite links from the app.
 
 Conditions:
   HasModel: !Not [!Equals [!Ref BedrockModelId, ""]]
@@ -58,7 +53,6 @@ Resources:
           BETTER_AUTH_URL: !Sub https://${DomainName}
           APP_ORIGIN: !Sub https://${DomainName}
           MAIL_MODE: console
-          INVITE_LINK_IN_RESPONSE: !Ref InviteLinkInResponse
           MONGO_MAX_POOL: "5"
           BEDROCK_MODEL_ID: !If [HasModel, !Ref BedrockModelId, ""]
       Policies:

@@ -37,7 +37,7 @@ interface NavSection {
 export const NAV: NavSection[] = [
   { label: "Overview", items: [{ to: "/coordinator", label: "Home" }] },
   { label: "People", items: [{ to: "/coordinator/contacts", label: "Contacts" }, { to: "/coordinator/volunteers", label: "Volunteers" }, { to: "/coordinator/teams", label: "Teams" }] },
-  { label: "Calls", items: [{ to: "/coordinator/calls", label: "Calls and logs" }, { to: "/coordinator/follow-ups", label: "Follow-ups" }, { to: "/coordinator/queue", label: "Coordinator queue" }] },
+  { label: "Calls", items: [{ to: "/calls", label: "Make calls" }, { to: "/coordinator/calls", label: "Calls and logs" }, { to: "/coordinator/follow-ups", label: "Follow-ups" }, { to: "/coordinator/queue", label: "Coordinator queue" }] },
   { label: "Knowledge", items: [{ to: "/coordinator/fact-sheets", label: "Fact sheets" }, { to: "/coordinator/rubrics", label: "Rubrics" }, { to: "/coordinator/knowledge", label: "Knowledge entries" }, { to: "/coordinator/handoffs", label: "Handoff packets" }] },
   { label: "Insights", items: [{ to: "/coordinator/insights", label: "Patterns" }, { to: "/coordinator/insights/geography", label: "Geography" }, { to: "/coordinator/insights/time", label: "Time" }, { to: "/coordinator/insights/campaigns", label: "Campaigns" }] },
   { label: "Admin", items: [{ to: "/coordinator/import", label: "Imports" }, { to: "/coordinator/invites", label: "Invites" }, { to: "/coordinator/members", label: "Members" }, { to: "/coordinator/audit", label: "Audit log" }] },
@@ -103,7 +103,7 @@ export function CoordinatorShell() {
   const navigate = useNavigate();
   if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
   if (!me) return <Navigate to="/sign-in" replace />;
-  if (me.onboarding_required) return <Navigate to="/onboarding" replace />;
+  if (me.onboarding_required || me.pending_invites.length > 0) return <Navigate to="/onboarding" replace />;
   if (!isCoordinator(me)) return <Navigate to="/home" replace />;
   return (
     <TooltipProvider>

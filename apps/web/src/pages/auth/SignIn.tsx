@@ -10,13 +10,16 @@ import { AuthCard } from "./AuthCard.tsx";
 export function SignIn() {
   const { refresh } = useSession();
   const navigate = useNavigate();
-  const from = (useLocation().state as { from?: string } | null)?.from ?? "/app";
-  const [email, setEmail] = useState("");
+  const location = useLocation();
+  const state = location.state as { from?: string; inviteEmail?: string } | null;
+  const from = state?.from ?? "/app";
+  const inviteEmail = state?.inviteEmail?.toLowerCase() ?? "";
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   return (
-    <AuthCard title="Sign in" description="Coordinators and volunteers sign in here.">
+    <AuthCard title="Sign in" description={inviteEmail ? `Sign in as ${inviteEmail} to accept your invite.` : "Coordinators and volunteers sign in here."}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -36,7 +39,7 @@ export function SignIn() {
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="email">Email</FieldLabel>
-            <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input id="email" type="email" autoComplete="email" required readOnly={Boolean(inviteEmail)} value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
           <Field>
             <FieldLabel htmlFor="password">Password</FieldLabel>

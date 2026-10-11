@@ -46,6 +46,8 @@ export function AcceptInvite() {
     );
   if (!info) return <AuthCard title="Checking invite…">{null}</AuthCard>;
 
+  const requiresInvitedEmailSignIn = info.has_account && me?.user.email.toLowerCase() !== info.email;
+
   const accept = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
@@ -64,11 +66,11 @@ export function AcceptInvite() {
   return (
     <AuthCard title={`Join ${info.team_name}`} description={`${info.org_name} invited ${info.email} as a ${info.role}.`}>
       {info.team_focus ? <p className="mb-4 text-sm text-muted-foreground">Team focus: {info.team_focus}</p> : null}
-      {info.has_account && me?.user.email.toLowerCase() !== info.email ? (
+      {requiresInvitedEmailSignIn ? (
         <Alert>
           <AlertTitle>You already have an account</AlertTitle>
           <AlertDescription>
-            <Link to="/sign-in" state={{ from: `/invite/${token}` }} className="underline">Sign in as {info.email}</Link> to accept.
+            <Link to="/sign-in" state={{ from: `/invite/${token}`, inviteEmail: info.email }} className="underline">Sign in as {info.email}</Link> to accept.
           </AlertDescription>
         </Alert>
       ) : (

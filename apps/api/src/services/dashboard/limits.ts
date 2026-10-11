@@ -67,11 +67,13 @@ export interface LimitInput {
   stated_on: string;
 }
 
-export async function changeLimit(deps: Deps, orgId: string, donor: DonorDoc, actor: string, input: LimitInput, kind: "limit" | "preference" = "limit"): Promise<DonorLimitDoc> {
+/** Pass `outer` to run inside the caller's transaction (for example when approving a pending limit). */
+export async function changeLimit(deps: Deps, orgId: string, donor: DonorDoc, actor: string, input: LimitInput, kind: "limit" | "preference" = "limit", outer?: ClientSession): Promise<DonorLimitDoc> {
   await ensureLimitRecords(deps, donor, actor);
   const c = collections(deps.db);
   const now = nowOf(deps);
-  return withTx(deps.client, async (session) => {
+  const run = <T,>(fn: (session: ClientSession) => Promise<T>) => (outer ? fn(outer) : withTx(deps.client, fn));
+  return run(async (session) => {
     let doc: DonorLimitDoc;
     if (input.action === "add") {
       if (!input.value) throw new HttpError(400, "invalid_payload", { issues: [{ path: "value", message: "value is required" }] });

@@ -6,7 +6,6 @@ import { collections } from "../../db/collections.ts";
 import { withTx } from "../../db/tx.ts";
 import { HttpError, notFound } from "../../http.ts";
 import { nowOf, type Deps } from "../context.ts";
-import { changeLimit } from "./limits.ts";
 import { p2, type FlagRow } from "./p2Docs.ts";
 import type { Scope } from "./scope.ts";
 import { displayNames, todayIn } from "./util.ts";
@@ -171,26 +170,6 @@ export async function listPendingLimits(deps: Deps, scope: Scope) {
   };
 }
 
-export async function decidePendingLimit(deps: Deps, scope: Scope, access: Access, id: string, input: { action: "approve" | "reject"; note?: string | undefined }) {
-  const px = p2(deps.db);
-  const pending = await px.pending_limits.findOne({ _id: id, org_id: scope.orgId, team_id: { $in: scope.teamIds } });
-  if (!pending) throw notFound();
-  if (pending.status !== "pending") throw new HttpError(409, "already_decided", { status: pending.status });
-  const now = nowOf(deps);
-  if (input.action === "approve") {
-    const donor = await collections(deps.db).donors.findOne({ _id: pending.donor_id, org_id: scope.orgId });
-    if (!donor) throw notFound();
-    const log = await px.call_logs.findOne({ _id: pending.log_id });
-    // Approving writes the limit to the donor record as a new version.
-    await changeLimit(deps, scope.orgId, donor, access.user.id, { action: "add", value: pending.limit, source: "Donor request (approved call log)", stated_on: (log?.approved_at ?? pending.created_at).toISOString().slice(0, 10) });
-  }
-  await withTx(deps.client, async (session) => {
-    await px.pending_limits.updateOne({ _id: pending._id, status: "pending" }, { $set: { status: input.action === "approve" ? "approved" : "rejected", decided_by: access.user.id, decided_at: now } }, { session });
-    await appendAudit(deps.db, { org_id: scope.orgId, who: access.user.id, action: `limit.${input.action}`, target_type: "pending_limit", target_id: pending._id, note: input.note ?? null }, session);
-  });
-  return { id: pending._id, status: input.action === "approve" ? "approved" : "rejected" };
-}
-
 // ---------- follow-ups ----------
 export async function listFollowUps(deps: Deps, scope: Scope, q: { status?: string | undefined; overdue?: boolean | undefined; owner_id?: string | undefined }) {
   const px = p2(deps.db);
@@ -215,17 +194,4 @@ export async function listFollowUps(deps: Deps, scope: Scope, q: { status?: stri
     note: r.last_note,
   }));
   return { follow_ups: q.overdue ? items.filter((i) => i.overdue) : items };
-}
-
-export async function cancelFollowUp(deps: Deps, scope: Scope, access: Access, id: string, note: string) {
-  const px = p2(deps.db);
-  const f = await px.follow_ups.findOne({ _id: id, org_id: scope.orgId, team_id: { $in: scope.teamIds } });
-  if (!f) throw notFound();
-  if (f.status === "cancelled") return { id, status: "cancelled" as const };
-  if (f.status === "done") throw new HttpError(409, "already_closed");
-  await withTx(deps.client, async (session) => {
-    await px.follow_ups.updateOne({ _id: f._id }, { $set: { status: "cancelled", closed_at: nowOf(deps), last_note: note } }, { session });
-    await appendAudit(deps.db, { org_id: scope.orgId, who: access.user.id, action: "follow_up.cancel", target_type: "follow_up", target_id: f._id, note }, session);
-  });
-  return { id, status: "cancelled" as const };
 }

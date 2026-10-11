@@ -13,7 +13,7 @@ export function AppLayout() {
   const location = useLocation();
   if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
   if (!me) return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />;
-  if (me.onboarding_required && location.pathname !== "/onboarding") return <Navigate to="/onboarding" replace />;
+  if ((me.onboarding_required || me.pending_invites.length > 0) && location.pathname !== "/onboarding") return <Navigate to="/onboarding" replace />;
   const coord = isCoordinator(me);
   return (
     <div className="min-h-screen bg-background">
@@ -22,6 +22,7 @@ export function AppLayout() {
         {me.org ? <span className="text-sm text-muted-foreground">{me.org.name}</span> : null}
         <nav className="flex flex-wrap gap-4 text-sm">
           {coord ? <NavLink to="/coordinator" className={link}>Dashboard</NavLink> : <NavLink to="/home" className={link}>Home</NavLink>}
+          <NavLink to="/calls" className={link}>Calls</NavLink>
           <NavLink to="/profile" className={link}>Profile</NavLink>
         </nav>
         <div className="ml-auto flex items-center gap-3 text-sm">

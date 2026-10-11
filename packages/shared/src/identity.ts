@@ -56,9 +56,9 @@ export const TeamDoc = z.object({
   org_id: id,
   name,
   focus: z.string().trim().max(200),
+  /** Added in P2; older S2 teams inherit from the org root or use the configured default. */
+  timezone: Timezone.optional(),
   parent_team_id: id.nullable(),
-  /** IANA zone used for due dates and overdue checks. Optional; missing means UTC. */
-  timezone: Timezone.nullable().optional(),
   archived_at: z.date().nullable(),
   created_at: z.date(),
 });
@@ -207,8 +207,8 @@ export type AuditDoc = z.infer<typeof AuditDoc>;
 // ---------- API request bodies (shared with web forms) ----------
 
 export const CoordinatorOnboarding = z.strictObject({ display_name: name, org_name: name, timezone: Timezone });
-export const CreateTeam = z.strictObject({ name, focus: z.string().trim().max(200).default(""), parent_team_id: id.nullable().default(null) });
-export const UpdateTeam = z.strictObject({ focus: z.string().trim().max(200).optional(), name: name.optional() });
+export const CreateTeam = z.strictObject({ name, focus: z.string().trim().max(200).default(""), parent_team_id: id.nullable().default(null), timezone: Timezone.optional() });
+export const UpdateTeam = z.strictObject({ focus: z.string().trim().max(200).optional(), name: name.optional(), timezone: Timezone.optional() });
 export const CreateInvite = z.strictObject({ email: z.email(), role: TeamRole });
 export const AcceptInvite = z.strictObject({
   token: z.string().min(20).max(200),

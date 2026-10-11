@@ -20,12 +20,13 @@ import { jsonBody, notFound, parseBody } from "../http.ts";
 import { toCsv } from "../imports/csv.ts";
 import { ImportRequest, commitImport, previewImport } from "../imports/importer.ts";
 import type { Deps } from "../services/context.ts";
-import { acceptInvite, createInvite, listInvites, lookupInvite, resendInvite, revokeInvite } from "../services/invites.ts";
+import { acceptInvite, acceptPendingInvite, createInvite, listInvites, listPendingInvitesForEmail, lookupInvite, resendInvite, revokeInvite } from "../services/invites.ts";
 import { onboardCoordinator, toUserKey } from "../services/orgs.ts";
 import { dashboardRoutes } from "./dashboard.ts";
 import { callerVisibleItems, listSheets as listSheetViews, staleDays, loadSheet as loadSheetV, approveVersion as approveFactVersion } from "../services/dashboard/facts.ts";
 import { nowOf } from "../services/context.ts";
 import { archiveTeam, changeMemberRole, createTeam, listMembers, removeMember, teamTree, updateTeam } from "../services/teams.ts";
+import { postCallRoutes } from "./postcall.ts";
 
 export type ApiEnv = { Variables: { user: SessionUser | null; access: Access } };
 
@@ -63,6 +64,7 @@ export function apiRoutes(deps: Deps) {
       user: access.user,
       org: org ? { id: org._id, name: org.name, slug: org.slug } : null,
       onboarding_required: !access.orgId,
+      pending_invites: await listPendingInvitesForEmail(deps, access.user.email),
       teams: teamTree(access),
     });
   });
@@ -81,6 +83,13 @@ export function apiRoutes(deps: Deps) {
     const body = parseBody(CoordinatorOnboarding, await jsonBody(c));
     const { org, rootTeam } = await onboardCoordinator(deps, c.get("access").user, body);
     return c.json({ org, root_team: rootTeam }, 201);
+  });
+
+  api.post("/onboarding/invites/:id/accept", async (c) => {
+    const user = c.get("user");
+    if (!user) throw new Error("authenticated route missing session user");
+    parseBody(z.strictObject({}), await jsonBody(c));
+    return c.json({ ok: true, ...(await acceptPendingInvite(deps, c.req.param("id"), { id: user.id, email: user.email })) });
   });
 
   // ---------- teams ----------
@@ -132,10 +141,9 @@ export function apiRoutes(deps: Deps) {
     const access = c.get("access");
     const orgId = requireCoordinator(access);
     const body = parseBody(CreateInvite, await jsonBody(c));
-    const { invite, token } = await createInvite(deps, access, orgId, c.req.param("id"), body);
+    const { invite, link } = await createInvite(deps, access, orgId, c.req.param("id"), body);
     const { token_hash: _h, ...safe } = invite;
-    // No email service in the hackathon: when enabled, the coordinator gets the link to copy.
-    return c.json({ invite: safe, ...(deps.env.INVITE_LINK_IN_RESPONSE === "1" ? { link: `${deps.env.APP_ORIGIN ?? "http://localhost:5173"}/invite/${token}` } : {}) }, 201);
+    return c.json({ invite: safe, link }, 201);
   });
 
   api.get("/invites", async (c) => {
@@ -145,8 +153,8 @@ export function apiRoutes(deps: Deps) {
 
   api.post("/invites/:id/resend", async (c) => {
     const access = c.get("access");
-    const { token } = await resendInvite(deps, access, requireCoordinator(access), c.req.param("id"));
-    return c.json({ ok: true, ...(deps.env.INVITE_LINK_IN_RESPONSE === "1" ? { link: `${deps.env.APP_ORIGIN ?? "http://localhost:5173"}/invite/${token}` } : {}) });
+    const { link } = await resendInvite(deps, access, requireCoordinator(access), c.req.param("id"));
+    return c.json({ ok: true, link });
   });
 
   api.post("/invites/:id/revoke", async (c) => {
@@ -258,5 +266,6 @@ export function apiRoutes(deps: Deps) {
   });
 
   dashboardRoutes(api, deps); // K3 coordinator dashboard routes
+  api.route("/", postCallRoutes(deps));
   return api;
 }

@@ -25,7 +25,7 @@ export async function onboardCoordinator(
   let slug = base;
   for (let i = 2; await c.organizations.findOne({ slug }); i++) slug = `${base}-${i}`;
   const org: OrganizationDoc = { _id: randomUUID(), name: input.org_name, slug, created_by: user.id, created_at: now };
-  const rootTeam: TeamDoc = { _id: randomUUID(), org_id: org._id, name: input.org_name, focus: "", parent_team_id: null, timezone: input.timezone, archived_at: null, created_at: now };
+  const rootTeam: TeamDoc = { _id: randomUUID(), org_id: org._id, name: input.org_name, focus: "", timezone: input.timezone, parent_team_id: null, archived_at: null, created_at: now };
   await withTx(deps.client, async (session) => {
     await c.organizations.insertOne(org, { session });
     await c.teams.insertOne(rootTeam, { session });

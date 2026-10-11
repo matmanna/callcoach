@@ -23,7 +23,7 @@ export function FollowUpsPage() {
   const [err, setErr] = useState<string | null>(null);
   const cancel = async () => {
     try {
-      await api(`/follow-ups/${target!.id}/cancel`, { body: { note } });
+      await api(`/follow-ups/${target!.id}/cancel`, { body: { idempotency_key: crypto.randomUUID(), note } });
       toast.success("Follow-up cancelled");
       setTarget(null);
       reload();

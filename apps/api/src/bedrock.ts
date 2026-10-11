@@ -4,7 +4,7 @@ import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
 export function createBedrockClient(env: NodeJS.ProcessEnv = process.env): BedrockRuntimeClient {
   const region = env.AWS_REGION;
   if (!region) throw new Error("AWS_REGION is not set (see .env.example)");
-  return new BedrockRuntimeClient({ region });
+  return new BedrockRuntimeClient({ region, maxAttempts: 5, retryMode: "adaptive" });
 }
 
 export function bedrockModelId(env: NodeJS.ProcessEnv = process.env): string {
