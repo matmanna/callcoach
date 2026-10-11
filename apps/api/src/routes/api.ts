@@ -22,6 +22,7 @@ import { ImportRequest, commitImport, previewImport } from "../imports/importer.
 import type { Deps } from "../services/context.ts";
 import { acceptInvite, acceptPendingInvite, createInvite, listInvites, listPendingInvitesForEmail, lookupInvite, resendInvite, revokeInvite } from "../services/invites.ts";
 import { onboardCoordinator, toUserKey } from "../services/orgs.ts";
+import { seedSampleDataSafely } from "../services/sample.ts";
 import { dashboardRoutes } from "./dashboard.ts";
 import { callerVisibleItems, listSheets as listSheetViews, staleDays, loadSheet as loadSheetV, approveVersion as approveFactVersion } from "../services/dashboard/facts.ts";
 import { nowOf } from "../services/context.ts";
@@ -82,6 +83,8 @@ export function apiRoutes(deps: Deps) {
   api.post("/onboarding/coordinator", async (c) => {
     const body = parseBody(CoordinatorOnboarding, await jsonBody(c));
     const { org, rootTeam } = await onboardCoordinator(deps, c.get("access").user, body);
+    // Sample teams, donors, facts and a rubric for every new organization (when AUTO_SEED_SAMPLE_DATA=1).
+    await seedSampleDataSafely(deps, c.get("access").user);
     return c.json({ org, root_team: rootTeam }, 201);
   });
 

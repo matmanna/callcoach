@@ -21,6 +21,12 @@ Parameters:
     Type: String
     Default: ""
 
+  AutoSeedSampleData:
+    Type: String
+    Default: "1"
+    AllowedValues: ["0", "1"]
+    Description: Seed sample teams, donors, facts and a rubric into every new organization.
+
 Conditions:
   HasModel: !Not [!Equals [!Ref BedrockModelId, ""]]
 
@@ -54,6 +60,7 @@ Resources:
           APP_ORIGIN: !Sub https://${DomainName}
           MAIL_MODE: console
           MONGO_MAX_POOL: "5"
+          AUTO_SEED_SAMPLE_DATA: !Ref AutoSeedSampleData
           BEDROCK_MODEL_ID: !If [HasModel, !Ref BedrockModelId, ""]
       Policies:
         - Statement:
