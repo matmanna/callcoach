@@ -6,15 +6,31 @@ CallCoach gives coordinators and volunteer callers a shared, privacy-minded way 
 
 > **Nothing leaves a volunteer's device until that volunteer approves a structured record.** The ledger shows what was retained locally and what was sent. Coordinators review every flag, follow-up, and contact-limit decision.
 
-| A calm starting point | A decision-led workflow |
+## Product views
+
+| Public landing | Pre-call brief |
 | --- | --- |
-| ![CallCoach landing page, showing a weekly calling workspace](docs/screenshots/landing.jpg) | ![CallCoach workflow, showing plan, prepare, record, and follow through](docs/screenshots/call-workflow.jpg) |
+| ![CallCoach landing page, showing a weekly calling workspace](docs/screenshots/landing.jpg) | ![Mockup of a donor pre-call brief with verified facts, contact limits, follow-ups, and approved logs](docs/screenshots/pre-call-brief.jpg) |
 
-| Privacy and review are product features |
+| Local AI call surface | Post-call approval ledger |
+| --- | --- |
+| ![Mockup of the local call surface with a scrubbed local transcript, donor dossier, and one approved cue](docs/screenshots/local-ai-call.jpg) | ![Mockup of structured post-call approval and the device send ledger](docs/screenshots/post-call-ledger.jpg) |
+
+| Coordinator operations |
 | --- |
-| ![CallCoach principles view, showing device-side note handling and coordinator review](docs/screenshots/privacy-model.jpg) |
+| ![Mockup of the coordinator dashboard with activity chart, coverage map, heatmap, queue, and append-only audit trail](docs/screenshots/coordinator-ops.jpg) |
 
-*Screenshots are captured from the local app and use synthetic demonstration data only.*
+*The landing image is captured from the local app. The remaining product-view mockups reflect implemented flows and use synthetic demonstration data only.*
+
+## Security is the product boundary
+
+CallCoach is deliberately **not** a transcript recorder. The useful record begins only after a caller can see, edit, and approve a small structured summary.
+
+- **Device boundary:** raw audio, raw recognized text, and the caller's free-form note stay in device memory. The audio and raw text are released after the local processing pass; they have no API route or database field.
+- **Redaction boundary:** known donor identifiers, pattern matches, phrase rules, and local NER run before a turn is displayed or used to construct a draft. If local NER fails, the flow holds the segment by default.
+- **Approval boundary:** the strict approved payload is the only post-call object sent to the server. The ledger is rendered from that exact object, so callers can inspect the handoff before it occurs.
+- **Model boundary:** a model may receive a scrubbed note only for constrained draft text, or approved structured log fields for an optional warmth crosscheck. It never receives raw audio or a raw transcript, and it cannot make a donor-record change.
+- **Decision boundary:** flags, contact limits, and follow-ups are proposals until a person decides. Audit records make those decisions traceable.
 
 ## The problem
 
@@ -137,7 +153,7 @@ The local AI path is built around speed, privacy, and clear failure behavior.
 | **Web browser** | `Xenova/whisper-tiny.en` + local NER | On-device speech recognition, turn handling, and identifier redaction. |
 | **Tauri desktop prototype** | `Xenova/whisper-base.en` + local NER | Higher-accuracy on-device transcription inside a Rust/Tauri shell. |
 
-The Tauri app contains only the generated Rust entry point and no privileged filesystem, shell, or arbitrary HTTP plugins. Models are fetched once into gitignored local assets with `pnpm models:fetch`; remote model loading and browser caching are disabled at runtime. See [the local AI and Tauri notes](docs/local-ai-tauri.md) for the complete data-flow and setup details.
+The Tauri app contains only the generated Rust entry point and no privileged filesystem, shell, or arbitrary HTTP plugins. Models are fetched once into gitignored local assets with `pnpm models:fetch`; remote model loading and browser caching are disabled at runtime. During a call, short mono audio chunks are transcribed locally, passed through the redaction stack, and released after each local pass. A local NER failure holds the segment by default, making failure visible rather than silently passing unredacted content. See [the local AI and Tauri notes](docs/local-ai-tauri.md) for the complete data-flow and setup details.
 
 ## Roadmap
 
@@ -159,10 +175,11 @@ The Tauri app contains only the generated Rust entry point and no privileged fil
 
 | Promise | How it is enforced |
 | --- | --- |
-| No raw transcript storage | There is no transcript, raw-text, or audio field in the server schema. |
+| No raw transcript storage | There is no transcript, raw-text, or audio field in the server schema, and no API endpoint accepts those artifacts. |
+| Local-first processing | Speech recognition and NER redaction run from bundled local assets; remote model loading is disabled. |
 | Caller approval is required | The strict `ApprovePayload` is the only post-call payload sent to the server. |
 | Identifiers are rejected | Client-side scrubbing runs before draft creation; server-side PII checks run before any storage or model use. |
-| AI is advisory | Model output is untrusted, schema-validated, and cannot act on a donor record. |
+| AI is advisory | Model output is untrusted, schema-validated, and cannot act on a donor record. Invalid output is unavailable rather than guessed. |
 | Decisions are accountable | Audit records are append-only; coordinator decisions and contact limits are explicit. |
 | No volunteer ranking | Warmth scores are separate, private to the caller/team coordinator, and never averaged. |
 
