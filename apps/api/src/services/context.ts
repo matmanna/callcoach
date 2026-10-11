@@ -7,8 +7,6 @@ export interface Deps {
   client: MongoClient;
   auth: Auth;
   env: NodeJS.ProcessEnv;
-  /** Where invite links go when MAIL_MODE=console. Tests capture it. */
-  mail: (to: string, subject: string, body: string) => void;
   now?: () => Date;
   /** Injectable for tests; no client is constructed unless a model is configured. */
   bedrock?: BedrockRuntimeClient;

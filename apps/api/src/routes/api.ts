@@ -130,9 +130,9 @@ export function apiRoutes(deps: Deps) {
     const access = c.get("access");
     const orgId = requireCoordinator(access);
     const body = parseBody(CreateInvite, await jsonBody(c));
-    const { invite } = await createInvite(deps, access, orgId, c.req.param("id"), body);
+    const { invite, link } = await createInvite(deps, access, orgId, c.req.param("id"), body);
     const { token_hash: _h, ...safe } = invite;
-    return c.json({ invite: safe }, 201);
+    return c.json({ invite: safe, link }, 201);
   });
 
   api.get("/invites", async (c) => {
@@ -142,8 +142,8 @@ export function apiRoutes(deps: Deps) {
 
   api.post("/invites/:id/resend", async (c) => {
     const access = c.get("access");
-    await resendInvite(deps, access, requireCoordinator(access), c.req.param("id"));
-    return c.json({ ok: true });
+    const { link } = await resendInvite(deps, access, requireCoordinator(access), c.req.param("id"));
+    return c.json({ ok: true, link });
   });
 
   api.post("/invites/:id/revoke", async (c) => {

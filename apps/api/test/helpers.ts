@@ -16,7 +16,6 @@ const URI = process.env.MONGODB_URI_TEST ?? "mongodb://localhost:27017/?replicaS
 export interface Harness {
   deps: Deps;
   app: ReturnType<typeof createApp>;
-  mails: Array<{ to: string; link: string }>;
   clock: { now: Date };
   close(): Promise<void>;
 }
@@ -31,19 +30,16 @@ export async function harness(): Promise<Harness> {
   }
   await initDb(mongo.db);
   const env = { BETTER_AUTH_SECRET: "test-secret-0123456789abcdef0123456789", BETTER_AUTH_URL: ORIGIN, APP_ORIGIN: ORIGIN, MAIL_MODE: "console" };
-  const mails: Harness["mails"] = [];
   const clock = { now: new Date() };
   const deps: Deps = {
     ...mongo,
     env,
     auth: createAuth(mongo.db, mongo.client, env),
-    mail: (to, _s, link) => mails.push({ to, link }),
     now: () => clock.now,
   };
   return {
     deps,
     app: createApp(deps),
-    mails,
     clock,
     async close() {
       await mongo.db.dropDatabase();
@@ -89,7 +85,7 @@ export async function signUpCoordinator(h: Harness, email: string, orgName: stri
 export async function inviteAndAccept(h: Harness, coord: Client, teamId: string, email: string, role: "caller" | "coordinator" = "caller") {
   const inv = await coord.post(`/api/teams/${teamId}/invites`, { email, role });
   if (inv.status !== 201) throw new Error(`invite failed ${inv.status} ${inv.text}`);
-  const token = h.mails.at(-1)!.link.split("/invite/")[1]!;
+  const token = String(inv.json.link).split("/invite/")[1]!;
   const v = new Client(h);
   const a = await v.post("/api/invites/accept", { token, password: "volunteer-pass-123", display_name: "Vol", timezone: "America/Chicago" });
   if (a.status !== 200) throw new Error(`accept failed ${a.status} ${a.text}`);

@@ -124,9 +124,10 @@ describe("cross-org access", () => {
 });
 
 describe("invites", () => {
-  it("stores only a hash of the token and prints the link (console mail)", async () => {
-    await coord.post(`/api/teams/${teamB}/invites`, { email: "hash@example.org", role: "caller" });
-    const token = h.mails.at(-1)!.link.split("/invite/")[1]!;
+  it("returns the link to the coordinator and stores only a hash of its token", async () => {
+    const response = await coord.post(`/api/teams/${teamB}/invites`, { email: "hash@example.org", role: "caller" });
+    const token = String(response.json.link).split("/invite/")[1]!;
+    expect(response.json.link).toMatch(/^http:\/\/localhost:5173\/invite\//);
     const docs = await h.deps.db.collection("invites").find({ email: "hash@example.org" }).toArray();
     expect(JSON.stringify(docs)).not.toContain(token);
     expect(docs[0]!.token_hash).toMatch(/^[0-9a-f]{64}$/);
@@ -141,15 +142,15 @@ describe("invites", () => {
 
   it("revoked token -> 410", async () => {
     const inv = await coord.post(`/api/teams/${teamB}/invites`, { email: "revoked@example.org", role: "caller" });
-    const token = h.mails.at(-1)!.link.split("/invite/")[1]!;
+    const token = String(inv.json.link).split("/invite/")[1]!;
     expect((await coord.post(`/api/invites/${inv.json.invite._id}/revoke`)).status).toBe(200);
     expect((await new Client(h).post("/api/invites/lookup", { token })).status).toBe(410);
     expect((await new Client(h).post("/api/invites/accept", { token, password: "volunteer-pass-123", display_name: "V", timezone: "UTC" })).status).toBe(410);
   });
 
   it("expired token -> 410", async () => {
-    await coord.post(`/api/teams/${teamB}/invites`, { email: "late@example.org", role: "caller" });
-    const token = h.mails.at(-1)!.link.split("/invite/")[1]!;
+    const inv = await coord.post(`/api/teams/${teamB}/invites`, { email: "late@example.org", role: "caller" });
+    const token = String(inv.json.link).split("/invite/")[1]!;
     const real = h.clock.now;
     h.clock.now = new Date(real.getTime() + INVITE_TTL_MS + 1000);
     try {
@@ -163,9 +164,9 @@ describe("invites", () => {
 
   it("resend rotates the token: the old link stops working", async () => {
     const inv = await coord.post(`/api/teams/${teamB}/invites`, { email: "rotate@example.org", role: "caller" });
-    const oldToken = h.mails.at(-1)!.link.split("/invite/")[1]!;
-    await coord.post(`/api/invites/${inv.json.invite._id}/resend`);
-    const newToken = h.mails.at(-1)!.link.split("/invite/")[1]!;
+    const oldToken = String(inv.json.link).split("/invite/")[1]!;
+    const resent = await coord.post(`/api/invites/${inv.json.invite._id}/resend`);
+    const newToken = String(resent.json.link).split("/invite/")[1]!;
     expect(newToken).not.toBe(oldToken);
     expect((await new Client(h).post("/api/invites/lookup", { token: oldToken })).status).toBe(404);
     expect((await new Client(h).post("/api/invites/lookup", { token: newToken })).status).toBe(200);

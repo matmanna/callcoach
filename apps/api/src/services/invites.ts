@@ -1,7 +1,4 @@
-/**
- * Invites. Only a SHA-256 of the token is stored. Links are printed to the API log when
- * MAIL_MODE=console (no email service in the hackathon).
- */
+/** Invites. Only a SHA-256 of the token is stored; the raw link is returned once. */
 import type { InviteDoc, TeamRole } from "@sc/shared";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { requireRole, type Access } from "../auth/access.ts";
@@ -25,13 +22,12 @@ export function inviteState(inv: InviteDoc, now: Date): InviteState {
   return "pending";
 }
 
-function sendLink(deps: Deps, inv: InviteDoc, token: string, teamName: string) {
+function inviteLink(deps: Deps, token: string) {
   const origin = deps.env.APP_ORIGIN ?? "http://localhost:5173";
-  const link = `${origin}/invite/${token}`;
-  deps.mail(inv.email, `You're invited to ${teamName}`, link);
+  return `${origin}/invite/${token}`;
 }
 
-export async function createInvite(deps: Deps, access: Access, orgId: string, teamId: string, input: { email: string; role: TeamRole }): Promise<{ invite: InviteDoc; token: string }> {
+export async function createInvite(deps: Deps, access: Access, orgId: string, teamId: string, input: { email: string; role: TeamRole }): Promise<{ invite: InviteDoc; token: string; link: string }> {
   const team = requireRole(access, teamId, "coordinator");
   const c = collections(deps.db);
   const email = input.email.toLowerCase();
@@ -57,8 +53,7 @@ export async function createInvite(deps: Deps, access: Access, orgId: string, te
     await c.invites.insertOne(invite, { session });
     await appendAudit(deps.db, { org_id: orgId, who: access.user.id, action: "invite.create", target_type: "invite", target_id: invite._id, note: input.role }, session);
   });
-  sendLink(deps, invite, token, team.name);
-  return { invite, token };
+  return { invite, token, link: inviteLink(deps, token) };
 }
 
 async function loadInviteForCoordinator(deps: Deps, access: Access, orgId: string, inviteId: string): Promise<InviteDoc> {
@@ -69,7 +64,7 @@ async function loadInviteForCoordinator(deps: Deps, access: Access, orgId: strin
 }
 
 /** Resend rotates the token (old link stops working) and resets the 7-day expiry. */
-export async function resendInvite(deps: Deps, access: Access, orgId: string, inviteId: string): Promise<{ token: string }> {
+export async function resendInvite(deps: Deps, access: Access, orgId: string, inviteId: string): Promise<{ token: string; link: string }> {
   const inv = await loadInviteForCoordinator(deps, access, orgId, inviteId);
   if (inv.accepted_at || inv.revoked_at) throw new HttpError(410, inv.accepted_at ? "already_used" : "revoked");
   const token = newToken();
@@ -77,9 +72,7 @@ export async function resendInvite(deps: Deps, access: Access, orgId: string, in
   const c = collections(deps.db);
   await c.invites.updateOne({ _id: inv._id }, { $set: { token_hash: hashToken(token), expires_at: new Date(now.getTime() + INVITE_TTL_MS) } });
   await appendAudit(deps.db, { org_id: orgId, who: access.user.id, action: "invite.resend", target_type: "invite", target_id: inv._id });
-  const team = await c.teams.findOne({ _id: inv.team_id });
-  sendLink(deps, inv, token, team?.name ?? "your team");
-  return { token };
+  return { token, link: inviteLink(deps, token) };
 }
 
 export async function revokeInvite(deps: Deps, access: Access, orgId: string, inviteId: string): Promise<void> {
