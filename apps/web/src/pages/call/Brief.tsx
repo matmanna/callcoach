@@ -36,7 +36,7 @@ export function Brief() {
         <h1 className="text-2xl font-semibold">Brief for {brief.donor.first_name} {brief.donor.last_name}</h1>
         <Button onClick={async () => { try {
           const result = await api<{ log_id: string }>(`/donors/${brief.donor.id}/logs/start`, { body: { call_id: crypto.randomUUID() } });
-          navigate(`/call/${brief.donor.id}/post?log=${result.log_id}`);
+          navigate(`/call/${brief.donor.id}?log=${result.log_id}`);
         } catch (err) { toast.error(errorMessage(err)); } }}>Start call log</Button>
       </div>
       <Card><CardHeader><CardTitle>Donor snapshot</CardTitle></CardHeader><CardContent className="space-y-1 text-sm">

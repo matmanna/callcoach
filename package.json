@@ -11,7 +11,10 @@
     "test": "vitest run",
     "typecheck": "pnpm -r --parallel typecheck",
     "db:seed": "pnpm --filter @sc/api db:seed",
-    "db:init": "pnpm --filter @sc/api db:init"
+    "db:init": "pnpm --filter @sc/api db:init",
+    "desktop:dev": "concurrently -k -n api,desktop -c green,cyan \"pnpm --filter @sc/api dev\" \"pnpm --filter @sc/desktop dev\"",
+    "desktop:build": "pnpm --filter @sc/desktop build",
+    "models:fetch": "pnpm --filter @sc/web models:fetch"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { api, errorMessage } from "@/lib/api";
+import { consumeCallDraft } from "@/lib/callMemory";
+import { redactTurnAsync } from "@/lib/localAi/asyncRedactor";
+import { loadNer, runNer } from "@/lib/localAi/ner";
 import { useSession } from "@/lib/session";
-import { draftFromNote, noteContext, scrubNote } from "@sc/rules";
-import { ApproveLogPayload, CueRulesFile, LogFields, LogRulesFile, PhraseRulesFile, type Donor, type DonorDoc, type LogFlag } from "@sc/shared";
+import { buildKnownIdentifiers, draftFromNote, redactionCounts } from "@sc/rules";
+import { ApproveLogPayload, CueRulesFile, LogFields, LogRulesFile, PhraseRulesFile, type Donor, type DonorDoc, type LogFlag, type RawTurn } from "@sc/shared";
 import cueRaw from "../../../../../data/cue-rules.json";
 import logRaw from "../../../../../data/log-rules.json";
 import phraseRaw from "../../../../../data/phrase-rules.json";
@@ -34,15 +37,45 @@ export function PostCall() {
   const [draft, setDraft] = useState<LogFields | null>(null);
   const [sentPayload, setSentPayload] = useState<ApproveLogPayload | null>(null);
   const [approved, setApproved] = useState(false);
+  const [draftBusy, setDraftBusy] = useState(false);
+  const [localModelError, setLocalModelError] = useState<string | null>(null);
+  const [localListening, setLocalListening] = useState<{ segments: number; backend: string } | null>(null);
   const key = useRef(crypto.randomUUID());
   useEffect(() => { if (donorId) void api<{ donor: DonorDoc }>(`/donors/${donorId}`).then((r) => setDonor(r.donor)).catch((err: unknown) => toast.error(errorMessage(err))); }, [donorId]);
+  useEffect(() => {
+    if (!logId) return;
+    const local = consumeCallDraft(logId);
+    if (!local || local.donorId !== donorId) return;
+    setDraft(local.fields);
+    setCounts(local.redactionCounts);
+    setLocalListening({ segments: local.segmentCount, backend: local.nerBackend });
+  }, [donorId, logId]);
   if (!logId || !donorId) return <p>Open a donor brief and start a call log first.</p>;
 
-  const makeDraft = () => {
+  const makeDraft = async () => {
     if (!donor || !note.trim() || !me) return;
-    const scrubbed = scrubNote(note, noteContext(forRedactor(donor), me.user.display_name ?? me.user.name, phraseRules));
-    setCounts(scrubbed.counts);
-    setDraft(draftFromNote(scrubbed.text, { logRules, cueRules }));
+    setDraftBusy(true);
+    setLocalModelError(null);
+    try {
+      const ner = await loadNer();
+      const raw: RawTurn = { id: crypto.randomUUID(), speaker: "volunteer", raw: note, t: 0 };
+      const result = await redactTurnAsync(raw, {
+        known: buildKnownIdentifiers(forRedactor(donor), me.user.display_name ?? me.user.name),
+        phraseRules,
+        ner: { enabled: true, run: runNer },
+      });
+      if (result.status === "held") {
+        setLocalModelError("The local redaction model did not complete, so this note was held on the device.");
+        return;
+      }
+      setCounts(redactionCounts([result.turn]));
+      setDraft(draftFromNote(result.turn.scrubbed, { logRules, cueRules }));
+      setLocalListening({ segments: 1, backend: `redaction ${ner.backend}` });
+    } catch {
+      setLocalModelError("Local redaction is unavailable. Run pnpm models:fetch, reload, and try again.");
+    } finally {
+      setDraftBusy(false);
+    }
   };
   const edit = (patch: Partial<LogFields>) => setDraft((current) => current ? { ...current, ...patch } : null);
   const approve = async () => {
@@ -61,10 +94,12 @@ export function PostCall() {
   };
 
   return <div className="space-y-5"><h1 className="text-2xl font-semibold">Post-call log</h1>
+    {localListening ? <Alert><AlertTitle>Local AI draft ready</AlertTitle><AlertDescription>{localListening.segments} scrubbed segment(s) produced this structured draft using {localListening.backend}. Raw audio and recognized text were discarded.</AlertDescription></Alert> : null}
     <Card><CardHeader><CardTitle>Short note on this device</CardTitle></CardHeader><CardContent className="space-y-3">
-      <Textarea aria-label="Short call note" maxLength={600} value={note} onChange={(e) => { setNote(e.target.value); setDraft(null); setSentPayload(null); }} disabled={approved} placeholder="Write a short note, up to 600 characters" />
+      <Textarea aria-label="Short call note" maxLength={600} value={note} onChange={(e) => { setNote(e.target.value); setDraft(null); setLocalListening(null); setSentPayload(null); }} disabled={approved} placeholder={localListening ? "The local listening draft is ready below. Type here to replace it." : "Write a short note, up to 600 characters"} />
       <p className="text-sm text-muted-foreground">{note.length}/600 characters</p>
-      {!approved ? <Button disabled={!donor || !note.trim()} onClick={makeDraft}>Create structured draft</Button> : <p>Note discarded after approval.</p>}
+      {localModelError ? <p className="text-sm text-destructive">{localModelError}</p> : null}
+      {!approved ? <Button disabled={!donor || !note.trim() || draftBusy} onClick={() => void makeDraft()}>{draftBusy ? "Redacting locally…" : "Create local AI draft"}</Button> : <p>Note discarded after approval.</p>}
     </CardContent></Card>
     {draft ? <Card><CardHeader><CardTitle>Review and edit the structured draft</CardTitle></CardHeader><CardContent className="space-y-4 text-sm">
       <label className="block">Outcome <select className="ml-2 rounded border p-1" value={draft.outcome} disabled={approved} onChange={(e) => edit({ outcome: e.target.value as LogFields["outcome"] })}>{["reached", "voicemail", "no_answer", "declined", "rescheduled"].map((x) => <option key={x}>{x}</option>)}</select></label>

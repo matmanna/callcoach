@@ -27,6 +27,14 @@ The brief filters by org, assigned team, campaign fact-sheet IDs, and approved s
 - `CI=true pnpm install --frozen-lockfile`: passed its supply-chain policy check after pinning Vitest's compatible `tinybench` to 6.1.4 in the workspace override.
 - Synthetic seed smoke check: 10 donors, one approved fact with source and verification date. Browser walkthrough showed brief, local scrub/draft, approval, proposed flag and pending limit queue, follow-up completion, and warmth input. The actual approved MongoDB log and follow-up contained neither the typed note nor its planted phone number; one `log.approve` audit row was present.
 
+## Local AI and desktop follow-up
+
+The redaction-lab branch was integrated into the production call path without exposing its
+experimental outbound transcript endpoint. The volunteer flow now has device-only Whisper
+listening, local NER layered onto the existing scrubber, an in-memory post-call handoff, and
+a Tauri 2 prototype shell. Typed notes use the same local NER before deterministic draft
+generation. See `docs/local-ai-tauri.md` for setup, privacy boundaries, and Bedrock needs.
+
 ## Bedrock prompt text
 
 Draft (optional, not currently wired to a note transport):

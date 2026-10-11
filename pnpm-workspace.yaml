@@ -3,5 +3,8 @@ packages:
   - packages/*
 allowBuilds:
   esbuild: true
+  # Browser AI uses onnxruntime-web; block unnecessary native postinstall scripts.
+  onnxruntime-node: false
+  protobufjs: false
 overrides:
   tinybench: 6.1.4

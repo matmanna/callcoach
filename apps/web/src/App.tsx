@@ -14,6 +14,7 @@ import { Teams } from "@/pages/coordinator/Teams";
 import { ReviewQueue } from "@/pages/coordinator/ReviewQueue";
 import { Brief } from "@/pages/call/Brief";
 import { DonorList } from "@/pages/call/DonorList";
+import { LiveCall } from "@/pages/call/LiveCall";
 import { Warmth } from "@/pages/call/Warmth";
 import { PostCall } from "@/pages/call/PostCall";
 import { Profile } from "@/pages/volunteer/Profile";
@@ -52,7 +53,7 @@ const router = createBrowserRouter([
       { path: "/call/:donorId/post", element: <PostCall /> },
       { path: "/logs/:logId/warmth", element: <Warmth /> },
       { path: "/gifts", element: <Placeholder title="Gifts" /> },
-      { path: "/call/:id", element: <Placeholder title="Call" /> },
+      { path: "/call/:donorId", element: <LiveCall /> },
       { path: "/review/:id", element: <Placeholder title="Review" /> },
       { path: "*", element: <Placeholder title="Not found" /> },
     ],

@@ -20,7 +20,6 @@ export function createApp(deps: Deps) {
   });
 
   app.get("/health", (c) => c.json({ ok: true }));
-
   // Better Auth owns /api/auth/* (sign-up, sign-in, sign-out, session, change-password).
   app.on(["GET", "POST"], "/api/auth/*", (c) => deps.auth.handler(c.req.raw));
   app.route("/api", apiRoutes(deps));

@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite --port 5173 --strictPort",
     "build": "vite build",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json",
+    "models:fetch": "tsx scripts/fetch-models.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
+    "@huggingface/transformers": "^4.3.1",
     "@sc/rules": "workspace:*",
     "@sc/shared": "workspace:*",
     "better-auth": "^1.7.7",
@@ -24,7 +26,8 @@
     "react-router": "^8.4.0",
     "shadcn": "^4.21.4",
     "sonner": "^2.0.8",
-    "tw-animate-css": "^1.4.0"
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
