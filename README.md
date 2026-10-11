@@ -6,6 +6,10 @@ CallCoach gives coordinators and volunteer callers a shared, privacy-minded way 
 
 > **Nothing leaves a volunteer's device until that volunteer approves a structured record.** The ledger shows what was retained locally and what was sent. Coordinators review every flag, follow-up, and contact-limit decision.
 
+## Demo video
+
+[Watch the 90-second demo (MP4)](docs/video/callcoach-pitch-final.mp4). It uses screen recordings and stills from the local app with synthetic data only. The live-call segment is a labelled simulation with a synthetic donor.
+
 ## Product views
 
 | Public landing | Pre-call brief |
@@ -110,6 +114,18 @@ CallCoach turns operational data into decisions instead of dashboards for their 
 - A new coordinator can work from briefs, open work, and audit history rather than reconstructing the program from scattered notes.
 
 This is a natural fit for a track focused on making data actionable. The exact sponsor RFS language was not available in the project materials, so this section intentionally maps to the supplied “data for the real world” goal without claiming a wording match.
+
+### Y Combinator Request for Startups — AI-Native Compliance Infrastructure
+
+CallCoach treats compliance as part of the workflow rather than a report produced afterwards:
+
+- **Consent gate before data moves:** raw audio and transcript text stay on the caller's device. Only a strict, caller-approved structured payload is sent, and the ledger shows exactly that payload.
+- **Identifier guard before any model call:** the server rejects identifiers before Bedrock sees anything, and errors report counts and types only, never the offending text.
+- **Human decisions on record:** flags, contact limits, and follow-ups stay proposals until a coordinator decides. Every approval and decision writes an append-only audit record.
+- **Contact preferences enforced:** a stop-contact request creates a pending limit that a coordinator must approve before the donor record changes.
+- **Bounded AI:** model output is parsed with Zod, restricted to allowed labels, and shown as unavailable when invalid. The model never contacts a donor or edits a record.
+
+This section maps CallCoach to the theme of the RFS; it does not claim any affiliation with Y Combinator.
 
 ### AWS
 
