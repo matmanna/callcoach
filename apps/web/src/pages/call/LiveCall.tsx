@@ -91,12 +91,16 @@ export function LiveCall() {
     setModelState("loading");
     setError(null);
     try {
-      const [ner, speech] = await Promise.all([loadNer(), loadSpeechModel()]);
+      // Transformers.js configures a shared ONNX Runtime singleton. Load in order so NER and
+      // Whisper never race while configuring its local WASM worker paths.
+      const ner = await loadNer();
+      const speech = await loadSpeechModel();
       setBackend(`speech ${speech.backend}; redaction ${ner.backend}`);
       setModelState("ready");
-    } catch {
+    } catch (err) {
       setModelState("failed");
-      setError("Local models are unavailable. Run pnpm models:fetch, then reload this page.");
+      const detail = err instanceof Error && err.message ? ` (${err.message})` : "";
+      setError(`Local models could not start. Reload the desktop app and try again. If this continues, run pnpm models:fetch from the repository root.${detail}`);
     }
   };
 
