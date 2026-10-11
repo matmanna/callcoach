@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { renderLabRoute } from "./routes/lab/index.tsx";
 
 // Minimal path router; swap for a router library only if the team agrees to add one.
-type Route = { name: "gifts" } | { name: "call"; id: string } | { name: "review"; id: string } | { name: "coordinator" } | { name: "not_found" };
+type Route = { name: "gifts" } | { name: "call"; id: string } | { name: "review"; id: string } | { name: "coordinator" } | { name: "lab_turns" } | { name: "not_found" };
 
 export function matchRoute(path: string): Route {
+  if (path === "/lab/turns") return { name: "lab_turns" };
   if (path === "/" || path === "/gifts") return { name: "gifts" };
   if (path === "/coordinator") return { name: "coordinator" };
   const call = /^\/call\/([^/]+)$/.exec(path);
@@ -31,6 +33,8 @@ export function App() {
       return <h1>Review {route.id}</h1>;
     case "coordinator":
       return <h1>Coordinator</h1>;
+    case "lab_turns":
+      return renderLabRoute(path) ?? <h1>Not found</h1>;
     case "not_found":
       return <h1>Not found</h1>;
   }

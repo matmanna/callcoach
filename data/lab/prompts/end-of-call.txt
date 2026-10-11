@@ -1,0 +1,1 @@
+Review only the supplied synthetic end-of-call summary and tags. Suggest supported flags, and do not infer facts absent from those inputs. Return strict JSON matching {"flags":[{"label":"DISTRESS|STOP_CONTACT|OFF_SCRIPT_CLAIM|PLANNED_GIVING|ENGAGE_MORE","reason":"at most 160 characters"}]}.
