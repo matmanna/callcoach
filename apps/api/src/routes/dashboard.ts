@@ -28,7 +28,7 @@ import { CONTACT_SORTS, deleteDossier, donorForCoordinator, getContactHistory, g
 import { approveVersion, createVersion, factWarnings, listSheets, loadSheet, reverifyItem } from "../services/dashboard/facts.ts";
 import { volunteerRubric } from "../services/dashboard/rubricScores.ts";
 import { activityHeatmap } from "../services/activity.ts";
-import { CHART_KINDS, COMPARE_KINDS, campaignsOverview, chart, compare, map, type ChartKind } from "../services/dashboard/insights.ts";
+import { CHART_KINDS, COMPARE_KINDS, campaignsOverview, chart, compare, map, suggestedMapLevel, type ChartKind } from "../services/dashboard/insights.ts";
 import { changeLimit } from "../services/dashboard/limits.ts";
 import {
   acknowledgeItem,
@@ -244,7 +244,11 @@ export function dashboardRoutes(api: Hono<ApiEnv>, deps: Deps) {
   });
   api.get("/insights/map", async (c) => {
     const q = c.req.query();
-    return c.json(await map(deps, scopeOf(c), q.level === "country" ? "country" : "region", q.from, q.to));
+    const scope = scopeOf(c);
+    // No explicit level: use the default from the volunteers' service scope. An explicit level always wins.
+    const suggestion = await suggestedMapLevel(deps, scope);
+    const level = q.level === "country" || q.level === "region" ? q.level : suggestion.level;
+    return c.json({ ...(await map(deps, scope, level, q.from, q.to)), suggested_level: suggestion.level, scope_mix: suggestion.scope_mix });
   });
   api.get("/insights/compare", async (c) => {
     const q = c.req.query();

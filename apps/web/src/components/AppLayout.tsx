@@ -52,7 +52,9 @@ export function AppLayout() {
   const location = useLocation();
   if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
   if (!me) return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />;
-  if ((me.onboarding_required || me.pending_invites.length > 0) && location.pathname !== "/onboarding") return <Navigate to="/onboarding" replace />;
+  // Volunteers in an organization are asked where they call (local, national, or global) once.
+  const needsScope = me.user.user_type === "volunteer" && !!me.org && !me.user.service_scope;
+  if ((me.onboarding_required || me.pending_invites.length > 0 || needsScope) && location.pathname !== "/onboarding") return <Navigate to="/onboarding" replace />;
   const coord = isCoordinator(me);
   const items: NavItem[] = [
     coord ? { to: "/coordinator", label: "Dashboard", icon: LayoutDashboard } : { to: "/home", label: "Home", icon: House },

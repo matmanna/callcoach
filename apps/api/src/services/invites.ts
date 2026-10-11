@@ -153,7 +153,11 @@ export interface AcceptInput {
  * Give a newly staffed team a usable synthetic call list. Existing donor assignments are reused
  * so no raw call data or external records are created during invite acceptance.
  */
-async function ensureTeamCallList(deps: Deps, inv: InviteDoc, userId: string): Promise<number> {
+/**
+ * Gives a team a small call list when it has fewer than MIN_DEMO_CALL_LIST_SIZE donors, copied from the
+ * organization's other teams. Used by invite acceptance and by join codes, so a new volunteer always has donors.
+ */
+export async function ensureTeamCallList(deps: Deps, inv: { org_id: string; team_id: string }, userId: string): Promise<number> {
   const c = collections(deps.db);
   const current = await c.donors.countDocuments({ org_id: inv.org_id, team_ids: inv.team_id });
   const needed = Math.max(0, MIN_DEMO_CALL_LIST_SIZE - current);

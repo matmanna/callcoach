@@ -10,7 +10,7 @@ export interface TeamNode extends Omit<TeamDoc, "created_at" | "archived_at"> {
 }
 
 export interface Me {
-  user: { id: string; email: string; name: string; user_type: UserType; display_name: string | null; timezone: string | null };
+  user: { id: string; email: string; name: string; user_type: UserType; display_name: string | null; timezone: string | null; service_scope?: "local" | "national" | "global" | null; home_region?: string | null };
   org: { id: string; name: string; slug: string; nonprofit_status: string | null; annual_revenue_band: string | null; staff_size_band: string | null; mission: string | null; country: string | null } | null;
   onboarding_required: boolean;
   pending_invites: Array<{ id: string; role: TeamRole; team_name: string; team_focus: string; org_name: string }>;

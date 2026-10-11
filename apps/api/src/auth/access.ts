@@ -20,6 +20,9 @@ export interface SessionUser {
   user_type: UserType;
   display_name: string | null;
   timezone: string | null;
+  /** Optional so callers that build a user from a seed or invite do not have to supply them. */
+  service_scope?: "local" | "national" | "global" | null;
+  home_region?: string | null;
 }
 
 export interface Access {
