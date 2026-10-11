@@ -1,3 +1,4 @@
+import { Masonry } from "@/components/dash/Masonry";
 import { LoadState, ModelNote, PageHeader } from "@/components/dash/bits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useApi } from "@/lib/useApi";
@@ -41,7 +42,7 @@ export function OverviewPage() {
       <PageHeader title="Overview" description={<ModelNote />} />
       <LoadState loading={loading} error={error}>
         {data ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <Masonry>
             {card("/coordinator/calls?tab=logs", "Calls this week", "From Monday", (
               <div className="flex gap-6">
                 <Stat label="completed" value={data.calls_this_week.completed} />
@@ -77,7 +78,7 @@ export function OverviewPage() {
                 <Stat label="stale" value={data.fact_sheet_health.stale} />
               </div>
             ))}
-          </div>
+          </Masonry>
         ) : null}
       </LoadState>
     </>

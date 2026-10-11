@@ -1,5 +1,6 @@
 import { CellText, DonorMix, LoadState, PageHeader, RangeNote, cellValue, type Cell } from "@/components/dash/bits";
 import { SeriesChart } from "@/components/dash/charts";
+import { Masonry } from "@/components/dash/Masonry";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -274,17 +275,19 @@ export function InsightsPage() {
         <label className="text-xs text-muted-foreground">To<Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} /></label>
         <span className="pb-2 text-xs text-muted-foreground">{range ? "" : "Default: the last 12 weeks."}</span>
       </div>
-      <Tabs defaultValue="calls">
+      <Masonry>
+        <CallsPerWeek range={range} />
+        <CallLength range={range} />
+        <Effectiveness range={range} />
+        <FollowUpCompletion range={range} />
+        <Preferences range={range} />
+        <OverdueTrend range={range} />
+        <Warmth range={range} />
+      </Masonry>
+      <Tabs defaultValue="compare" className="mt-2">
         <TabsList className="flex-wrap">
-          <TabsTrigger value="calls">Calls</TabsTrigger><TabsTrigger value="follow">Follow-ups</TabsTrigger><TabsTrigger value="prefs">Preferences</TabsTrigger><TabsTrigger value="overdue">Overdue</TabsTrigger><TabsTrigger value="length">Call length</TabsTrigger><TabsTrigger value="effect">Effectiveness</TabsTrigger><TabsTrigger value="warmth">Warmth</TabsTrigger><TabsTrigger value="compare">Compare segments</TabsTrigger><TabsTrigger value="shared">Shared patterns</TabsTrigger>
+          <TabsTrigger value="compare">Compare segments</TabsTrigger><TabsTrigger value="shared">Shared patterns</TabsTrigger>
         </TabsList>
-        <TabsContent value="calls" className="pt-3"><CallsPerWeek range={range} /></TabsContent>
-        <TabsContent value="follow" className="pt-3"><FollowUpCompletion range={range} /></TabsContent>
-        <TabsContent value="prefs" className="pt-3"><Preferences range={range} /></TabsContent>
-        <TabsContent value="overdue" className="pt-3"><OverdueTrend range={range} /></TabsContent>
-        <TabsContent value="length" className="pt-3"><CallLength range={range} /></TabsContent>
-        <TabsContent value="effect" className="pt-3"><Effectiveness range={range} /></TabsContent>
-        <TabsContent value="warmth" className="pt-3"><Warmth range={range} /></TabsContent>
         <TabsContent value="compare" className="pt-3"><Compare range={range} /></TabsContent>
         <TabsContent value="shared" className="pt-3"><SharedPatterns /></TabsContent>
       </Tabs>
