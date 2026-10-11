@@ -2,6 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api, errorMessage } from "@/lib/api";
 import { keepCallDraft } from "@/lib/callMemory";
@@ -10,7 +11,7 @@ import { LocalAudioCapture } from "@/lib/localAi/audioCapture";
 import { redactTurnAsync } from "@/lib/localAi/asyncRedactor";
 import { loadNer, runNer } from "@/lib/localAi/ner";
 import { loadSpeechModel, transcribeLocal } from "@/lib/localAi/speech";
-import { TwoVoiceDiarizer, voiceProfileFromAudio, type SpeakerDetection } from "@/lib/localAi/speakerDetection";
+import { TwoVoiceDiarizer, loadStoredVoiceProfile, saveVoiceProfile, voiceProfileFromAudio, type SpeakerDetection } from "@/lib/localAi/speakerDetection";
 import { buildKnownIdentifiers, draftFromNote, redactionCounts } from "@sc/rules";
 import { CueRulesFile, LogRulesFile, PhraseRulesFile, type Donor, type DonorDoc, type RawTurn, type Turn } from "@sc/shared";
 import cueRaw from "../../../../../data/cue-rules.json";
@@ -55,17 +56,19 @@ export function LiveCall() {
   const [processing, setProcessing] = useState(false);
   const [speaker, setSpeaker] = useState<RawTurn["speaker"]>("donor");
   const [autoDetectSpeaker, setAutoDetectSpeaker] = useState(true);
-  const [calibratingSpeaker, setCalibratingSpeaker] = useState(false);
   const [speakerProfileReady, setSpeakerProfileReady] = useState(false);
   const [lastDetection, setLastDetection] = useState<SpeakerDetection | null>(null);
+  const [calibrationOpen, setCalibrationOpen] = useState(false);
+  const [calibrationState, setCalibrationState] = useState<"idle" | "recording" | "ready" | "failed">("idle");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [held, setHeld] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const capture = useRef<LocalAudioCapture | null>(null);
+  const calibrationCapture = useRef<LocalAudioCapture | null>(null);
+  const referenceSampleReceived = useRef(false);
   const turnsRef = useRef<Turn[]>([]);
   const speakerRef = useRef<RawTurn["speaker"]>("donor");
   const autoDetectSpeakerRef = useRef(true);
-  const calibratingSpeakerRef = useRef(false);
   const diarizer = useRef<TwoVoiceDiarizer | null>(null);
   const startedAt = useRef(0);
 
@@ -82,8 +85,17 @@ export function LiveCall() {
     void api<{ donor: DonorDoc }>(`/donors/${donorId}`)
       .then((result) => setDonor(result.donor))
       .catch((err: unknown) => toast.error(errorMessage(err)));
-    return () => { void capture.current?.stop(); };
+    return () => { void capture.current?.stop(); void calibrationCapture.current?.stop(); };
   }, [donorId]);
+
+  useEffect(() => {
+    if (!me || diarizer.current) return;
+    const stored = loadStoredVoiceProfile(me.user.id);
+    if (!stored) return;
+    diarizer.current = new TwoVoiceDiarizer(stored);
+    setSpeakerProfileReady(true);
+    setCalibrationState("ready");
+  }, [me]);
 
   if (!donorId || !logId) return <p>Open a donor brief and start a call first.</p>;
 
@@ -106,6 +118,10 @@ export function LiveCall() {
 
   const startListening = async () => {
     if (!donor || !me || modelState !== "ready") return;
+    if (!diarizer.current) {
+      setCalibrationOpen(true);
+      return;
+    }
     setError(null);
     startedAt.current ||= Date.now();
     const known = buildKnownIdentifiers(forRedactor(donor), me.user.display_name ?? me.user.name);
@@ -113,16 +129,6 @@ export function LiveCall() {
       capture.current = await LocalAudioCapture.start(async (audio) => {
         setProcessing(true);
         try {
-          if (calibratingSpeakerRef.current) {
-            const profile = voiceProfileFromAudio(audio);
-            if (profile) {
-              diarizer.current = new TwoVoiceDiarizer(profile);
-              calibratingSpeakerRef.current = false;
-              setCalibratingSpeaker(false);
-              setSpeakerProfileReady(true);
-              setLastDetection(null);
-            }
-          }
           const detection = diarizer.current && autoDetectSpeakerRef.current
             ? diarizer.current.detect(audio)
             : null;
@@ -155,10 +161,34 @@ export function LiveCall() {
     if (active) await active.stop();
   };
 
-  const calibrateVolunteerVoice = () => {
-    calibratingSpeakerRef.current = true;
-    setCalibratingSpeaker(true);
-    setLastDetection(null);
+  const recordReferenceSample = async () => {
+    if (!me) return;
+    referenceSampleReceived.current = false;
+    setCalibrationState("recording");
+    setError(null);
+    try {
+      calibrationCapture.current = await LocalAudioCapture.start(async (audio) => {
+        if (referenceSampleReceived.current) return;
+        referenceSampleReceived.current = true;
+        const profile = voiceProfileFromAudio(audio);
+        if (!profile) {
+          setCalibrationState("failed");
+          setError("No clear speech was detected. Try again in a quiet room and speak normally for the full 10 seconds.");
+        } else {
+          diarizer.current = new TwoVoiceDiarizer(profile);
+          saveVoiceProfile(me.user.id, profile);
+          setSpeakerProfileReady(true);
+          setLastDetection(null);
+          setCalibrationState("ready");
+        }
+        const active = calibrationCapture.current;
+        calibrationCapture.current = null;
+        void active?.stop();
+      }, 10);
+    } catch (err) {
+      setCalibrationState("failed");
+      setError(err instanceof Error ? err.message : "Microphone access failed while recording the reference sample.");
+    }
   };
 
   const finish = async () => {
@@ -176,7 +206,6 @@ export function LiveCall() {
       });
     }
     diarizer.current = null;
-    calibratingSpeakerRef.current = false;
     navigate(`/call/${donorId}/post?log=${logId}`);
   };
 
@@ -220,21 +249,41 @@ export function LiveCall() {
           <div className="rounded-lg border p-3 text-sm space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <strong>Local speaker detection</strong>
-              {speakerProfileReady ? <Badge variant="secondary">Two-voice detection ready</Badge> : <Badge variant="outline">Manual labels</Badge>}
-              <Button size="sm" variant="outline" onClick={calibrateVolunteerVoice} disabled={!listening || calibratingSpeaker}>
-                {calibratingSpeaker ? "Listening for your voice…" : "Calibrate my voice"}
+              {speakerProfileReady ? <Badge variant="secondary">Two-voice detection ready</Badge> : <Badge variant="outline">Reference sample needed</Badge>}
+              <Button size="sm" variant="outline" onClick={() => setCalibrationOpen(true)} disabled={listening}>
+                {speakerProfileReady ? "Recalibrate before next call" : "Set up speaker labels"}
               </Button>
               <Button size="sm" variant={autoDetectSpeaker ? "secondary" : "outline"} onClick={() => setAutoDetectSpeaker((enabled) => !enabled)} disabled={!speakerProfileReady}>
                 Auto detection: {autoDetectSpeaker ? "on" : "off"}
               </Button>
             </div>
-            <p className="text-muted-foreground">With the call on speaker, press Calibrate my voice and speak for one segment. Two matching segments from a clearly different voice establish the other speaker. Labels are suggestions from this microphone only; use Current speaker to override them. No voice profile, audio, or raw text leaves this device.</p>
+            <p className="text-muted-foreground">Calibrate before the call. Two matching segments from a clearly different voice establish the other speaker. Labels are suggestions from this microphone only; use Current speaker to override them. Tauri stores the compact reference profile only on this device.</p>
             {lastDetection?.voiced ? <p className="text-muted-foreground">Latest local label: likely {lastDetection.speaker} ({Math.round(lastDetection.confidence * 100)}% match confidence){lastDetection.learnedOtherVoice ? "; two voices learned" : ""}.</p> : null}
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           {held ? <p className="text-sm text-destructive">{held} segment(s) held because local NER did not complete.</p> : null}
         </CardContent>
       </Card>
+
+      <Dialog open={calibrationOpen} onOpenChange={(open) => { if (calibrationState !== "recording") setCalibrationOpen(open); }}>
+        <DialogContent showCloseButton={calibrationState !== "recording"}>
+          <DialogHeader>
+            <DialogTitle>Set up two-voice detection</DialogTitle>
+            <DialogDescription>Record a short local reference before the call. The app uses it only to tell your voice apart from the other person&apos;s voice.</DialogDescription>
+          </DialogHeader>
+          <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+            <li>Use the same microphone and distance you will use for the call.</li>
+            <li>Choose a quiet space and keep the donor&apos;s voice silent during the sample.</li>
+            <li>Press record and speak naturally for <strong>10 seconds</strong>: two or three full sentences at normal volume.</li>
+            <li>During the call, let each person speak for at least two segments before trusting the automatic donor label.</li>
+          </ol>
+          {calibrationState === "failed" ? <p className="text-sm text-destructive">Reference sample was not saved. Try again.</p> : null}
+          {calibrationState === "ready" ? <p className="text-sm text-muted-foreground">Reference sample ready. In Tauri, its compact acoustic profile is saved only on this device for future calls.</p> : null}
+          <DialogFooter>
+            {calibrationState === "ready" ? <Button onClick={() => { setCalibrationOpen(false); void startListening(); }}>Start call</Button> : <Button onClick={() => void recordReferenceSample()} disabled={calibrationState === "recording"}>{calibrationState === "recording" ? "Recording 10-second sample…" : "Record 10-second sample"}</Button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader><CardTitle>Locally redacted transcript</CardTitle><CardDescription>Only scrubbed segments are retained for the post-call draft.</CardDescription></CardHeader>

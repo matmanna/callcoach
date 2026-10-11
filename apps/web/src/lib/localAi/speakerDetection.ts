@@ -21,6 +21,39 @@ export interface SpeakerDetection {
   readonly learnedOtherVoice: boolean;
 }
 
+const PROFILE_STORAGE_PREFIX = "stewardship-copilot.voice-profile.v1";
+
+function isTauriRuntime(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+function storedProfileKey(userId: string): string {
+  return `${PROFILE_STORAGE_PREFIX}.${userId}`;
+}
+
+/** Tauri-only persistence for a compact profile. Audio and transcript text are never stored. */
+export function loadStoredVoiceProfile(userId: string): VoiceProfile | null {
+  if (!isTauriRuntime()) return null;
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(storedProfileKey(userId)) ?? "null");
+    if (!value || typeof value !== "object") return null;
+    const profile = value as Partial<VoiceProfile>;
+    if (!Array.isArray(profile.bands) || profile.bands.length !== BAND_FREQUENCIES.length || !profile.bands.every(Number.isFinite) || typeof profile.zeroCrossingRate !== "number" || typeof profile.roughness !== "number" || !Number.isFinite(profile.zeroCrossingRate) || !Number.isFinite(profile.roughness)) return null;
+    return { bands: [...profile.bands], zeroCrossingRate: profile.zeroCrossingRate, roughness: profile.roughness };
+  } catch {
+    return null;
+  }
+}
+
+export function saveVoiceProfile(userId: string, profile: VoiceProfile): void {
+  if (!isTauriRuntime()) return;
+  window.localStorage.setItem(storedProfileKey(userId), JSON.stringify(profile));
+}
+
+export function clearStoredVoiceProfile(userId: string): void {
+  if (isTauriRuntime()) window.localStorage.removeItem(storedProfileKey(userId));
+}
+
 const SAMPLE_RATE = 16_000;
 const FRAME_SAMPLES = 400;
 const HOP_SAMPLES = 160;
