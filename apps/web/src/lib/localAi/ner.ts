@@ -50,8 +50,18 @@ export function setPipelineFactory(f: PipelineFactory | null): void {
   loading = null;
 }
 
-function webGpuAvailable(): boolean {
-  return typeof navigator !== "undefined" && "gpu" in navigator && !!(navigator as Navigator & { gpu?: unknown }).gpu;
+/**
+ * WebGPU only when an adapter actually exists. ONNX Runtime caches a failed backend init,
+ * so a failed WebGPU attempt can also break the later WASM attempt in the same page.
+ */
+async function webGpuAvailable(): Promise<boolean> {
+  const gpu = (navigator as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } }).gpu;
+  if (!gpu) return false;
+  try {
+    return (await gpu.requestAdapter()) !== null;
+  } catch {
+    return false;
+  }
 }
 
 /** Try WebGPU when present, else WASM. Logs the active backend. */
@@ -61,7 +71,7 @@ export function loadNer(): Promise<NerStatus> {
   loading = (async () => {
     const started = performance.now();
     let backend: "webgpu" | "wasm" = "wasm";
-    if (webGpuAvailable()) {
+    if (await webGpuAvailable()) {
       try {
         pipe = await factory("webgpu");
         backend = "webgpu";
