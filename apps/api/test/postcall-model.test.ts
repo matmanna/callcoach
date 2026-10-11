@@ -1,7 +1,8 @@
 import type { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import type { LogFields } from "@sc/shared";
 import { describe, expect, it, vi } from "vitest";
-import { modelDraft, modelWarmth } from "../src/services/postcallModel.ts";
+import { modelDraft, modelWarmth, DRAFT_PROMPT } from "../src/services/postcallModel.ts";
+import { renderOrgContext, type OrgModelContext } from "../src/services/orgContext.ts";
 import type { Deps } from "../src/services/context.ts";
 
 const fields: LogFields = { outcome: "reached", donor_stated_reason: "Thanked for the gift", preference: "none", follow_up: { needed: false, action: "", due_date: null }, flags: [] };
@@ -28,5 +29,24 @@ describe("post-call Bedrock Converse wrapper", () => {
   it("truncates reasons and rejects extra model fields", async () => {
     expect((await modelWarmth(deps(JSON.stringify({ score: 3, reason: "x".repeat(200) })).deps, fields))?.reason).toHaveLength(160);
     expect(await modelDraft(deps(JSON.stringify({ donor_stated_reason: "code", follow_up_action: "call", health: "guess" })).deps, "[NAME] requested a call back")).toBeNull();
+  });
+
+  it("sends the approved organization context as part of the system prompt", async () => {
+    const context: OrgModelContext = {
+      mission: "Youth mentoring after school.",
+      facts: [{ text: "340 students took part in 2025-26.", source: "Enrollment report", verified_on: "2026-09-15" }],
+    };
+    const mock = deps(JSON.stringify({ donor_stated_reason: "code", follow_up_action: "call" }));
+    await modelDraft(mock.deps, "[NAME] requested a call back", context);
+    const system = mock.send.mock.calls[0]![0].input.system?.[0]?.text ?? "";
+    expect(system.startsWith(DRAFT_PROMPT)).toBe(true);
+    expect(system).toContain(renderOrgContext(context));
+    expect(system).toContain("(Source: Enrollment report; verified 2026-09-15)");
+  });
+
+  it("sends only the prompt when the organization has no context", async () => {
+    const mock = deps(JSON.stringify({ donor_stated_reason: "code", follow_up_action: "call" }));
+    await modelDraft(mock.deps, "[NAME] requested a call back", { mission: null, facts: [] });
+    expect(mock.send.mock.calls[0]![0].input.system?.[0]?.text).toBe(DRAFT_PROMPT);
   });
 });

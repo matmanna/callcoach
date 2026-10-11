@@ -27,6 +27,8 @@ export { KnowledgePage } from "@/pages/dash/Knowledge";
 export { OverviewPage } from "@/pages/dash/Overview";
 export { QueuePage } from "@/pages/dash/Queue";
 export { RubricsPage } from "@/pages/dash/Rubrics";
+export { AdminHub, CallsHub, InsightsHub, KnowledgeHub, PeopleHub } from "@/pages/dash/Hubs";
+export { TabRedirect } from "@/components/dash/Hub";
 export { TimeBandsPage } from "@/pages/dash/TimeBands";
 export { VolunteerDetailPage } from "@/pages/dash/VolunteerDetail";
 export { VolunteersPage } from "@/pages/dash/Volunteers";

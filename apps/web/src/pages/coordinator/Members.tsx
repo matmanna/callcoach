@@ -12,6 +12,7 @@ import { flattenTeams, useSession } from "@/lib/session";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/dash/bits";
 
 interface Member {
   membership_id: string;
@@ -58,7 +59,7 @@ export function Members() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Members</h1>
+        <PageHeader title="Members" />
         <div className="flex flex-wrap items-center gap-2">
           <TeamSelect value={teamId} onChange={(id) => setParams({ team: id })} />
           <Button onClick={() => (setError(null), setInvite({ email: "", role: "caller" }), setInviteOpen(true))} disabled={!teamId}>

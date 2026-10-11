@@ -5,6 +5,7 @@
  */
 import { z } from "zod";
 import { Tag } from "./enums.ts";
+import { NonprofitStatus, RevenueBand, RubricWeight, StaffSizeBand } from "./orgProfile.ts";
 
 export const UserType = z.enum(["coordinator", "volunteer"]);
 export type UserType = z.infer<typeof UserType>;
@@ -48,6 +49,12 @@ export const OrganizationDoc = z.object({
   slug: z.string().regex(/^[a-z0-9-]+$/),
   created_by: id,
   created_at: z.date(),
+  /** Profile fields are optional. Added in schema v4. */
+  nonprofit_status: NonprofitStatus.nullable().optional(),
+  annual_revenue_band: RevenueBand.nullable().optional(),
+  staff_size_band: StaffSizeBand.nullable().optional(),
+  mission: z.string().max(300).nullable().optional(),
+  country: z.string().max(80).nullable().optional(),
 });
 export type OrganizationDoc = z.infer<typeof OrganizationDoc>;
 
@@ -159,6 +166,8 @@ export const RubricItemDoc = z.object({
   text: z.string().trim().min(1).max(300),
   supporting_tags: z.array(Tag),
   conditional_on_tag: Tag.nullable(),
+  /** Added in schema v4; missing means 1. */
+  weight: RubricWeight.optional(),
 });
 
 export const RubricDoc = z.object({
@@ -267,6 +276,7 @@ export const RubricImportFile = z.object({
         text: z.string().trim().min(1).max(300),
         supporting_tags: z.array(Tag),
         conditional_on_tag: Tag.optional().nullable(),
+        weight: RubricWeight.optional(),
       }),
     )
     .min(1),

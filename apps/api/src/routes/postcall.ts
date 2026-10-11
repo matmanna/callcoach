@@ -24,6 +24,7 @@ import { HttpError, jsonBody, notFound, parseBody } from "../http.ts";
 import { accessibleDonor, donorBrief } from "../services/brief.ts";
 import { nowOf, type Deps } from "../services/context.ts";
 import { modelWarmth } from "../services/postcallModel.ts";
+import { orgModelContext } from "../services/orgContext.ts";
 import { assertNoPii, assertNoPiiText } from "../services/postcallGuard.ts";
 import { toUserKey } from "../services/orgs.ts";
 import { teamTimezone } from "../services/teamTimezone.ts";
@@ -277,7 +278,7 @@ export function postCallRoutes(deps: Deps) {
       throw err;
     }
     if (enabled) {
-      const result = await modelWarmth(deps, log.approved);
+      const result = await modelWarmth(deps, log.approved, await orgModelContext(deps, log.org_id));
       if (result) {
         try {
           assertNoPiiText(result.reason, donor, access.user.name);

@@ -14,7 +14,7 @@ import { Tag } from "@sc/shared";
 import { useState } from "react";
 import { toast } from "sonner";
 
-interface RubricItem { id: string; text: string; supporting_tags: string[]; conditional_on_tag?: string | null }
+interface RubricItem { id: string; text: string; supporting_tags: string[]; conditional_on_tag?: string | null; weight?: number }
 interface Rubric { _id: string; team_id: string | null; version?: number; items: RubricItem[] }
 interface Versions { versions: Array<{ version: number; note: string | null; created_at: string; created_by: string; logs_evaluated: number; items: RubricItem[] }> }
 
@@ -31,7 +31,7 @@ export function RubricsPage() {
   const patch = (idx: number, p: Partial<RubricItem>) => setItems(items.map((it, i) => (i === idx ? { ...it, ...p } : it)));
   const save = async () => {
     try {
-      await api(`/rubrics/${editing!._id}`, { method: "PUT", body: { items: items.map((i) => ({ id: i.id, text: i.text, supporting_tags: i.supporting_tags, conditional_on_tag: i.conditional_on_tag ?? null })), ...(note.trim() ? { note } : {}) } });
+      await api(`/rubrics/${editing!._id}`, { method: "PUT", body: { items: items.map((i) => ({ id: i.id, text: i.text, supporting_tags: i.supporting_tags, conditional_on_tag: i.conditional_on_tag ?? null, weight: i.weight ?? 1 })), ...(note.trim() ? { note } : {}) } });
       toast.success("Saved as a new version");
       setEditing(null);
       reload();
@@ -71,7 +71,11 @@ export function RubricsPage() {
           <div className="space-y-3">
             {items.map((it, idx) => (
               <div key={it.id} className="space-y-2 rounded border p-2">
-                <Input aria-label={`Item ${idx + 1} text`} value={it.text} onChange={(e) => patch(idx, { text: e.target.value })} />
+                <div className="flex items-center gap-2">
+                  <Input aria-label={`Item ${idx + 1} text`} value={it.text} onChange={(e) => patch(idx, { text: e.target.value })} />
+                  <Label htmlFor={`${it.id}-weight`} className="shrink-0 text-xs">Weight</Label>
+                  <Input id={`${it.id}-weight`} type="number" min={0} max={5} step={1} className="w-20" value={it.weight ?? 1} onChange={(e) => patch(idx, { weight: Math.min(5, Math.max(0, Math.round(Number(e.target.value) || 0))) })} />
+                </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-1">
                   {Tag.options.map((t) => (
                     <div key={t} className="flex items-center gap-1 text-xs"><Checkbox id={`${it.id}-${t}`} checked={it.supporting_tags.includes(t)} onCheckedChange={(v) => patch(idx, { supporting_tags: v === true ? [...it.supporting_tags, t] : it.supporting_tags.filter((x) => x !== t) })} /><Label htmlFor={`${it.id}-${t}`} className="text-xs">{t}</Label></div>

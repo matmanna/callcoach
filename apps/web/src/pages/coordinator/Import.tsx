@@ -14,6 +14,7 @@ import { api, errorMessage } from "@/lib/api";
 import type { SeedKind } from "@sc/shared";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/dash/bits";
 
 interface Preview {
   headers: string[];
@@ -104,7 +105,7 @@ export function Import() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Import data</h1>
+      <PageHeader title="Import data" />
       <Alert>
         <AlertTitle>Use synthetic or consented data only.</AlertTitle>
         <AlertDescription>Files with transcript, audio, or raw-notes columns are refused. Every import is recorded and audited.</AlertDescription>

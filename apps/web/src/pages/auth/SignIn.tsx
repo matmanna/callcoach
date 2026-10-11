@@ -19,7 +19,7 @@ export function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   return (
-    <AuthCard title="Sign in" description={inviteEmail ? `Sign in as ${inviteEmail} to accept your invite.` : "Coordinators and volunteers sign in here."}>
+    <AuthCard title="Sign in" description={inviteEmail ? `Sign in as ${inviteEmail} to accept your invite.` : "Sign in to see your teams and calls."}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();

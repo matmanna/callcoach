@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { api, errorMessage } from "@/lib/api";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/dash/bits";
 
 interface Invite {
   _id: string;
@@ -53,7 +54,7 @@ export function Invites() {
   };
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Invites</h1>
+      <PageHeader title="Invites" />
       <Table>
         <TableHeader>
           <TableRow>

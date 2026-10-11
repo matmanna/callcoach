@@ -10,10 +10,10 @@ interface DonorRow { _id: string; first_name: string; last_name: string; campaig
 export function DonorList() {
   const [donors, setDonors] = useState<DonorRow[]>([]);
   useEffect(() => { void api<{ donors: DonorRow[] }>("/donors").then((r) => setDonors(r.donors)).catch((err: unknown) => toast.error(errorMessage(err))); }, []);
-  return <div className="space-y-4"><h1 className="text-2xl font-semibold">Calls</h1>
+  return <div className="space-y-4"><div><h1 className="text-2xl font-semibold">Calls</h1><p className="text-sm text-muted-foreground">Pick a donor, read the short brief, then make the call.</p></div>
     {donors.map((d) => <Card key={d._id}><CardHeader><CardTitle>{d.first_name} {d.last_name}</CardTitle></CardHeader><CardContent className="flex items-center justify-between gap-3 text-sm">
       <span>{d.campaign} · {d.gift_band}</span><Button asChild size="sm"><Link to={`/call/${d._id}/brief`}>Open brief</Link></Button>
     </CardContent></Card>)}
-    {!donors.length ? <p className="text-muted-foreground">No assigned donors yet.</p> : null}
+    {!donors.length ? <p className="text-muted-foreground">No donors assigned yet. Your coordinator assigns calls, and they appear here.</p> : null}
   </div>;
 }

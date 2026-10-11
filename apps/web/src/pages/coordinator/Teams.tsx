@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/dash/bits";
 
 type DialogState = { mode: "create"; parent: TeamNode | null } | { mode: "edit"; team: TeamNode } | null;
 
@@ -71,7 +72,7 @@ export function Teams() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Teams</h1>
+        <PageHeader title="Teams" />
         <Button onClick={() => open({ mode: "create", parent: null })}>New team</Button>
       </div>
       <Table>
