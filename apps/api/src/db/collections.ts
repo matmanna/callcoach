@@ -1,5 +1,11 @@
 /** Typed collection handles. `audit_log` is deliberately absent: use db/audit.ts (append and read only). */
 import type {
+  DonorLimitDoc,
+  FactItemVersionDoc,
+  HandoffPacketDoc,
+  KnowledgeEntryDoc,
+  PatternDoc,
+  RubricVersionDoc,
   CampaignDoc,
   DonorDoc,
   FactSheetDoc,
@@ -10,6 +16,11 @@ import type {
   RubricDoc,
   SeedRunDoc,
   TeamDoc,
+  CallLogDoc,
+  CallFlagDoc,
+  PendingLimitDoc,
+  FollowUpDoc,
+  WarmthDoc,
 } from "@sc/shared";
 import type { Db, ObjectId } from "mongodb";
 
@@ -37,6 +48,17 @@ export function collections(db: Db) {
     fact_sheets: db.collection<FactSheetDoc>("fact_sheets"),
     rubrics: db.collection<RubricDoc>("rubrics"),
     seed_runs: db.collection<SeedRunDoc>("seed_runs"),
+    donor_limits: db.collection<DonorLimitDoc>("donor_limits"),
+    fact_item_versions: db.collection<FactItemVersionDoc>("fact_item_versions"),
+    rubric_versions: db.collection<RubricVersionDoc>("rubric_versions"),
+    knowledge_entries: db.collection<KnowledgeEntryDoc>("knowledge_entries"),
+    handoff_packets: db.collection<HandoffPacketDoc>("handoff_packets"),
+    patterns: db.collection<PatternDoc>("patterns"),
+    call_logs: db.collection<CallLogDoc>("call_logs"),
+    call_flags: db.collection<CallFlagDoc>("call_flags"),
+    pending_limits: db.collection<PendingLimitDoc>("pending_limits"),
+    follow_ups: db.collection<FollowUpDoc>("follow_ups"),
+    warmth_ratings: db.collection<WarmthDoc>("warmth_ratings"),
   };
 }
 export type Collections = ReturnType<typeof collections>;
@@ -53,6 +75,17 @@ export const TENANT_COLLECTIONS = [
   "fact_sheets",
   "rubrics",
   "seed_runs",
+  "donor_limits",
+  "fact_item_versions",
+  "rubric_versions",
+  "knowledge_entries",
+  "handoff_packets",
+  "patterns",
+  "call_logs",
+  "call_flags",
+  "pending_limits",
+  "follow_ups",
+  "warmth_ratings",
 ] as const;
 export const AUTH_COLLECTIONS = ["users", "sessions", "accounts", "verifications"] as const;
 export const AUDIT_COLLECTION = "audit_log";

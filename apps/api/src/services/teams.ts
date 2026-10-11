@@ -21,7 +21,7 @@ function depthOf(team: TeamDoc, all: Map<string, TeamDoc>): number {
   return d;
 }
 
-export async function createTeam(deps: Deps, access: Access, orgId: string, input: { name: string; focus: string; parent_team_id: string | null }): Promise<TeamDoc> {
+export async function createTeam(deps: Deps, access: Access, orgId: string, input: { name: string; focus: string; parent_team_id: string | null; timezone?: string }): Promise<TeamDoc> {
   const c = collections(deps.db);
   const root = await c.teams.findOne({ org_id: orgId, parent_team_id: null }, { sort: { created_at: 1 } });
   const parentId = input.parent_team_id ?? root?._id ?? null;
@@ -29,7 +29,7 @@ export async function createTeam(deps: Deps, access: Access, orgId: string, inpu
   const parent = requireRole(access, parentId, "coordinator");
   const all = new Map((await c.teams.find({ org_id: orgId }).toArray()).map((t) => [t._id, t]));
   if (depthOf(parent, all) + 1 > MAX_TEAM_DEPTH) throw new HttpError(422, "max_depth", { max_depth: MAX_TEAM_DEPTH });
-  const team: TeamDoc = { _id: randomUUID(), org_id: orgId, name: input.name, focus: input.focus, parent_team_id: parent._id, archived_at: null, created_at: nowOf(deps) };
+  const team: TeamDoc = { _id: randomUUID(), org_id: orgId, name: input.name, focus: input.focus, timezone: input.timezone ?? parent.timezone ?? access.user.timezone ?? "UTC", parent_team_id: parent._id, archived_at: null, created_at: nowOf(deps) };
   await withTx(deps.client, async (session) => {
     await c.teams.insertOne(team, { session });
     await appendAudit(deps.db, { org_id: orgId, who: access.user.id, action: "team.create", target_type: "team", target_id: team._id }, session);
@@ -37,7 +37,7 @@ export async function createTeam(deps: Deps, access: Access, orgId: string, inpu
   return team;
 }
 
-export async function updateTeam(deps: Deps, access: Access, orgId: string, teamId: string, patch: { name?: string; focus?: string }): Promise<TeamDoc> {
+export async function updateTeam(deps: Deps, access: Access, orgId: string, teamId: string, patch: { name?: string; focus?: string; timezone?: string }): Promise<TeamDoc> {
   requireRole(access, teamId, "coordinator");
   const c = collections(deps.db);
   const res = await c.teams.findOneAndUpdate({ _id: teamId, org_id: orgId }, { $set: patch }, { returnDocument: "after" });

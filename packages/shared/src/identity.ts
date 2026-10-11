@@ -56,6 +56,8 @@ export const TeamDoc = z.object({
   org_id: id,
   name,
   focus: z.string().trim().max(200),
+  /** Added in P2; older S2 teams inherit from the org root or use the configured default. */
+  timezone: Timezone.optional(),
   parent_team_id: id.nullable(),
   archived_at: z.date().nullable(),
   created_at: z.date(),
@@ -106,6 +108,8 @@ export const DonorDoc = z.object({
   last_gift_band: z.string().trim().min(1).max(40),
   limits: z.array(z.string().trim().min(1).max(200)),
   timezone_hint: Timezone.nullable(),
+  /** Region-level only (state or country code, e.g. "US-PA"). No street-level data or coordinates. Added in schema v2. */
+  region: z.string().trim().max(40).nullable().optional(),
   created_at: z.date(),
   updated_at: z.date(),
 });
@@ -162,6 +166,8 @@ export const RubricDoc = z.object({
   org_id: id,
   team_id: id.nullable(),
   items: z.array(RubricItemDoc).min(1),
+  /** Current version number. Added in schema v3; missing means version 1. */
+  version: z.number().int().positive().optional(),
   created_at: z.date(),
 });
 export type RubricDoc = z.infer<typeof RubricDoc>;
@@ -201,8 +207,8 @@ export type AuditDoc = z.infer<typeof AuditDoc>;
 // ---------- API request bodies (shared with web forms) ----------
 
 export const CoordinatorOnboarding = z.strictObject({ display_name: name, org_name: name, timezone: Timezone });
-export const CreateTeam = z.strictObject({ name, focus: z.string().trim().max(200).default(""), parent_team_id: id.nullable().default(null) });
-export const UpdateTeam = z.strictObject({ focus: z.string().trim().max(200).optional(), name: name.optional() });
+export const CreateTeam = z.strictObject({ name, focus: z.string().trim().max(200).default(""), parent_team_id: id.nullable().default(null), timezone: Timezone.optional() });
+export const UpdateTeam = z.strictObject({ focus: z.string().trim().max(200).optional(), name: name.optional(), timezone: Timezone.optional() });
 export const CreateInvite = z.strictObject({ email: z.email(), role: TeamRole });
 export const AcceptInvite = z.strictObject({
   token: z.string().min(20).max(200),
@@ -223,6 +229,7 @@ export const DonorCsvRow = z.object({
   spouse_name: z.string().trim().max(120).optional().transform((v) => v || null),
   employer: z.string().trim().max(120).optional().transform((v) => v || null),
   town: z.string().trim().max(120).optional().transform((v) => v || null),
+  region: z.string().trim().max(40).optional().transform((v) => v || null),
   campaign: name,
   gift_band: z.string().trim().min(1).max(40),
   past_gift_count: z.coerce.number().int().nonnegative(),
@@ -233,7 +240,7 @@ export const DonorCsvRow = z.object({
     .transform((v) => (v ?? "").split(";").map((s) => s.trim()).filter(Boolean)),
   team_name: name,
 });
-export const DONOR_COLUMNS = ["external_id", "first_name", "last_name", "spouse_name", "employer", "town", "campaign", "gift_band", "past_gift_count", "last_gift_band", "limits", "team_name"] as const;
+export const DONOR_COLUMNS = ["external_id", "first_name", "last_name", "spouse_name", "employer", "town", "region", "campaign", "gift_band", "past_gift_count", "last_gift_band", "limits", "team_name"] as const;
 
 export const GiftCsvRow = z.object({
   external_id: z.string().trim().min(1).max(64),

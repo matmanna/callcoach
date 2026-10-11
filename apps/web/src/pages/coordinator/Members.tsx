@@ -1,4 +1,5 @@
 import { TeamSelect } from "@/components/TeamSelect";
+import { InviteLinkDialog } from "@/components/InviteLinkDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,6 +32,7 @@ export function Members() {
   const [members, setMembers] = useState<Member[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [invite, setInvite] = useState<{ email: string; role: "caller" | "coordinator" }>({ email: "", role: "caller" });
+  const [generatedLink, setGeneratedLink] = useState<{ email: string; link: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -122,7 +124,7 @@ export function Members() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Invite to {flattenTeams(me?.teams ?? []).find((t) => t._id === teamId)?.name}</DialogTitle>
-            <DialogDescription>In development the invite link is printed to the API log (MAIL_MODE=console).</DialogDescription>
+            <DialogDescription>Create an invitation for this email. Existing users can sign in and accept it from onboarding; the private link is also available for new-account setup.</DialogDescription>
           </DialogHeader>
           <FieldGroup>
             <Field>
@@ -148,19 +150,26 @@ export function Members() {
             <Button
               onClick={async () => {
                 try {
-                  await api(`/teams/${teamId}/invites`, { body: invite });
-                  toast.success(`Invite sent to ${invite.email}`);
+                  const result = await api<{ link: string }>(`/teams/${teamId}/invites`, { body: invite });
+                  setGeneratedLink({ email: invite.email, link: result.link });
+                  toast.success("Invite link ready");
                   setInviteOpen(false);
                 } catch (err) {
                   setError(errorMessage(err));
                 }
               }}
             >
-              Send invite
+              Create invite link
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <InviteLinkDialog
+        open={generatedLink !== null}
+        onOpenChange={(open) => { if (!open) setGeneratedLink(null); }}
+        email={generatedLink?.email ?? ""}
+        link={generatedLink?.link ?? ""}
+      />
     </div>
   );
 }

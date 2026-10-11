@@ -49,10 +49,11 @@ export function buildKnownIdentifiers(donor: Donor, volunteerName: string): Know
 }
 
 /** Layer index doubles as the tie-break: lower layer wins on equal length. */
-const Layer = { Existing: -1, Known: 0, Regex: 1, Phrase: 2 } as const;
+const Layer = { Existing: -1, Known: 0, Regex: 1, Phrase: 2, Extra: 3 } as const;
 type Layer = (typeof Layer)[keyof typeof Layer];
 
-interface Interval {
+/** Internal match interval. Offsets point into the raw text. Exported for lab tooling only. */
+export interface Interval {
   start: number;
   end: number;
   type: PlaceholderType;
@@ -145,21 +146,57 @@ function mergeIntervals(existing: Interval[], candidates: Interval[]): Interval[
   return [...merged, ...existing].sort((a, b) => a.start - b.start);
 }
 
-/**
- * Scrub one raw turn. All three layers (known identifiers, identifier regexes, phrase rules)
- * match against the original raw text; overlaps are merged; the scrubbed string is then built
- * in a single pass with span offsets computed against the output.
- */
-export function redactTurn(raw: RawTurn, ctx: RedactContext): Turn {
-  const text = raw.raw;
-  const existing = existingPlaceholders(text);
-  const candidates = [...knownMatches(text, ctx.known), ...regexMatches(text), ...phraseMatches(text, ctx.phraseRules)];
-  const intervals = mergeIntervals(existing, candidates);
+/** An interval from outside the rules package (for example a local NER model). Layer 4. */
+export interface ExtraInterval {
+  readonly start: number;
+  readonly end: number;
+  readonly type: PlaceholderType;
+}
 
+export interface LayerSelection {
+  readonly known: boolean;
+  readonly regex: boolean;
+  readonly phrase: boolean;
+}
+
+export const ALL_LAYERS: LayerSelection = { known: true, regex: true, phrase: true };
+
+export interface RedactionPlan {
+  readonly existing: Interval[];
+  readonly known: Interval[];
+  readonly regex: Interval[];
+  readonly phrase: Interval[];
+  /** Merged intervals (including existing placeholders), sorted by start. */
+  readonly merged: Interval[];
+}
+
+/**
+ * Match every enabled layer against the raw text and merge. This is the single code path
+ * behind `redactTurn`; lab tooling calls it to inspect layers. Raw-text offsets: lab only.
+ */
+export function planRedaction(
+  text: string,
+  ctx: RedactContext,
+  layers: LayerSelection = ALL_LAYERS,
+  extra: readonly ExtraInterval[] = [],
+): RedactionPlan {
+  const existing = existingPlaceholders(text);
+  const known = layers.known ? knownMatches(text, ctx.known) : [];
+  const regex = layers.regex ? regexMatches(text) : [];
+  const phrase = layers.phrase ? phraseMatches(text, ctx.phraseRules) : [];
+  const extras: Interval[] = extra
+    .filter((e) => e.end > e.start && e.start >= 0 && e.end <= text.length)
+    .map((e) => ({ start: e.start, end: e.end, type: e.type, placeholder: placeholderFor(e.type), layer: Layer.Extra }));
+  return { existing, known, regex, phrase, merged: mergeIntervals(existing, [...known, ...regex, ...phrase, ...extras]) };
+}
+
+/** Build the scrubbed string in a single pass; span offsets are computed against the output. */
+export function applyRedactionPlan(raw: RawTurn, plan: RedactionPlan): Turn {
+  const text = raw.raw;
   let scrubbed = "";
   let cursor = 0;
   const redactions: RedactionSpan[] = [];
-  for (const iv of intervals) {
+  for (const iv of plan.merged) {
     scrubbed += text.slice(cursor, iv.start);
     const start = scrubbed.length;
     scrubbed += iv.placeholder;
@@ -169,6 +206,15 @@ export function redactTurn(raw: RawTurn, ctx: RedactContext): Turn {
   scrubbed += text.slice(cursor);
 
   return { id: raw.id, speaker: raw.speaker, scrubbed, redactions, t: raw.t };
+}
+
+/**
+ * Scrub one raw turn. All three layers (known identifiers, identifier regexes, phrase rules)
+ * match against the original raw text; overlaps are merged; the scrubbed string is then built
+ * in a single pass with span offsets computed against the output.
+ */
+export function redactTurn(raw: RawTurn, ctx: RedactContext): Turn {
+  return applyRedactionPlan(raw, planRedaction(raw.raw, ctx));
 }
 
 /** Count of redactions per placeholder type across turns. Every type is present. */

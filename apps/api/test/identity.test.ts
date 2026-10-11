@@ -124,12 +124,31 @@ describe("cross-org access", () => {
 });
 
 describe("invites", () => {
-  it("stores only a hash of the token and prints the link (console mail)", async () => {
-    await coord.post(`/api/teams/${teamB}/invites`, { email: "hash@example.org", role: "caller" });
-    const token = h.mails.at(-1)!.link.split("/invite/")[1]!;
+  it("returns the link to the coordinator and stores only a hash of its token", async () => {
+    const response = await coord.post(`/api/teams/${teamB}/invites`, { email: "hash@example.org", role: "caller" });
+    const token = String(response.json.link).split("/invite/")[1]!;
+    expect(response.json.link).toMatch(/^http:\/\/localhost:5173\/invite\//);
     const docs = await h.deps.db.collection("invites").find({ email: "hash@example.org" }).toArray();
     expect(JSON.stringify(docs)).not.toContain(token);
     expect(docs[0]!.token_hash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("lets an invited signed-in user accept from onboarding without the link token", async () => {
+    const direct = new Client(h);
+    expect((await direct.post("/api/auth/sign-up/email", { email: "onboarding@example.org", password: "coordinator-pass-123", name: "Onboarding", user_type: "coordinator" })).status).toBe(200);
+    const invite = await coord.post(`/api/teams/${teamB}/invites`, { email: "onboarding@example.org", role: "caller" });
+    const me = await direct.get("/api/me");
+    expect(me.json.pending_invites).toEqual([expect.objectContaining({ id: invite.json.invite._id, team_name: "Alumni Callers" })]);
+    expect((await direct.post(`/api/onboarding/invites/${invite.json.invite._id}/accept`, {})).status).toBe(200);
+    expect((await direct.get("/api/me")).json.teams.map((team: { _id: string }) => team._id)).toContain(teamB);
+  });
+
+  it("seeds calls for the first volunteer added to an empty coordinator team", async () => {
+    const team = await coord.post("/api/teams", { name: "New Demo Team", focus: "new callers" });
+    const { client } = await inviteAndAccept(h, coord, team.json.team._id, "new-team@example.org");
+    const calls = (await client.get("/api/donors")).json.donors as Array<{ team_ids: string[] }>;
+    expect(calls).toHaveLength(3);
+    expect(calls.every((donor) => donor.team_ids.includes(team.json.team._id))).toBe(true);
   });
 
   it("reused token: second accept returns 410 already_used and changes nothing", async () => {
@@ -141,15 +160,15 @@ describe("invites", () => {
 
   it("revoked token -> 410", async () => {
     const inv = await coord.post(`/api/teams/${teamB}/invites`, { email: "revoked@example.org", role: "caller" });
-    const token = h.mails.at(-1)!.link.split("/invite/")[1]!;
+    const token = String(inv.json.link).split("/invite/")[1]!;
     expect((await coord.post(`/api/invites/${inv.json.invite._id}/revoke`)).status).toBe(200);
     expect((await new Client(h).post("/api/invites/lookup", { token })).status).toBe(410);
     expect((await new Client(h).post("/api/invites/accept", { token, password: "volunteer-pass-123", display_name: "V", timezone: "UTC" })).status).toBe(410);
   });
 
   it("expired token -> 410", async () => {
-    await coord.post(`/api/teams/${teamB}/invites`, { email: "late@example.org", role: "caller" });
-    const token = h.mails.at(-1)!.link.split("/invite/")[1]!;
+    const inv = await coord.post(`/api/teams/${teamB}/invites`, { email: "late@example.org", role: "caller" });
+    const token = String(inv.json.link).split("/invite/")[1]!;
     const real = h.clock.now;
     h.clock.now = new Date(real.getTime() + INVITE_TTL_MS + 1000);
     try {
@@ -163,9 +182,9 @@ describe("invites", () => {
 
   it("resend rotates the token: the old link stops working", async () => {
     const inv = await coord.post(`/api/teams/${teamB}/invites`, { email: "rotate@example.org", role: "caller" });
-    const oldToken = h.mails.at(-1)!.link.split("/invite/")[1]!;
-    await coord.post(`/api/invites/${inv.json.invite._id}/resend`);
-    const newToken = h.mails.at(-1)!.link.split("/invite/")[1]!;
+    const oldToken = String(inv.json.link).split("/invite/")[1]!;
+    const resent = await coord.post(`/api/invites/${inv.json.invite._id}/resend`);
+    const newToken = String(resent.json.link).split("/invite/")[1]!;
     expect(newToken).not.toBe(oldToken);
     expect((await new Client(h).post("/api/invites/lookup", { token: oldToken })).status).toBe(404);
     expect((await new Client(h).post("/api/invites/lookup", { token: newToken })).status).toBe(200);
