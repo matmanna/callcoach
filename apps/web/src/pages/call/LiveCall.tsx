@@ -126,6 +126,8 @@ export function LiveCall() {
     startedAt.current ||= Date.now();
     const known = buildKnownIdentifiers(forRedactor(donor), me.user.display_name ?? me.user.name);
     try {
+      // Three-second windows keep a turn from swallowing a speaker change. The second matching
+      // non-volunteer window confirms the donor profile.
       capture.current = await LocalAudioCapture.start(async (audio) => {
         setProcessing(true);
         try {
@@ -147,7 +149,7 @@ export function LiveCall() {
         } finally {
           setProcessing(false);
         }
-      });
+      }, 3);
       setListening(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Microphone access failed.");
@@ -257,8 +259,8 @@ export function LiveCall() {
                 Auto detection: {autoDetectSpeaker ? "on" : "off"}
               </Button>
             </div>
-            <p className="text-muted-foreground">Calibrate before the call. Two matching segments from a clearly different voice establish the other speaker. Labels are suggestions from this microphone only; use Current speaker to override them. Tauri stores the compact reference profile only on this device.</p>
-            {lastDetection?.voiced ? <p className="text-muted-foreground">Latest local label: likely {lastDetection.speaker} ({Math.round(lastDetection.confidence * 100)}% match confidence){lastDetection.learnedOtherVoice ? "; two voices learned" : ""}.</p> : null}
+            <p className="text-muted-foreground">The call is checked in roughly 3-second windows. The first clearly different window is labelled as a provisional donor voice; a matching second window confirms it. Labels are suggestions from this microphone only; use Current speaker to override them. Tauri stores the compact reference profile only on this device.</p>
+            {lastDetection?.voiced ? <p className="text-muted-foreground">Latest local label: likely {lastDetection.speaker} ({Math.round(lastDetection.confidence * 100)}% match confidence){lastDetection.learnedOtherVoice ? "; two voices confirmed" : "; checking the second voice"}.</p> : null}
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           {held ? <p className="text-sm text-destructive">{held} segment(s) held because local NER did not complete.</p> : null}

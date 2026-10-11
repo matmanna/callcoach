@@ -22,7 +22,7 @@ describe("local two-voice diarization", () => {
     expect(profile).toBeTruthy();
     const diarizer = new TwoVoiceDiarizer(profile!);
     expect(diarizer.detect(volunteer).speaker).toBe("volunteer");
-    expect(diarizer.detect(donor).speaker).toBe("unknown");
+    expect(diarizer.detect(donor)).toMatchObject({ speaker: "donor", learnedOtherVoice: false });
     expect(diarizer.detect(donor)).toMatchObject({ speaker: "donor", learnedOtherVoice: true });
     expect(diarizer.detect(volunteer).speaker).toBe("volunteer");
     expect(diarizer.detect(donor).speaker).toBe("donor");

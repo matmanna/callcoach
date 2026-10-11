@@ -161,7 +161,7 @@ export class TwoVoiceDiarizer {
       }
       if (!this.donorCandidate) {
         this.donorCandidate = candidate;
-        return { speaker: "unknown", confidence: 0, voiced: true, learnedOtherVoice: false };
+        return suggestion("donor", volunteerDistance, false);
       }
       if (profileDistance(candidate, this.donorCandidate) <= MATCH_THRESHOLD) {
         this.donor = blendProfile(this.donorCandidate, candidate, 0.5);
@@ -169,7 +169,7 @@ export class TwoVoiceDiarizer {
         return suggestion("donor", volunteerDistance, true);
       }
       this.donorCandidate = candidate;
-      return { speaker: "unknown", confidence: 0, voiced: true, learnedOtherVoice: false };
+      return suggestion("donor", volunteerDistance, false);
     }
 
     const donorDistance = profileDistance(candidate, this.donor);
