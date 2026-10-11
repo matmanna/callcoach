@@ -143,6 +143,14 @@ describe("invites", () => {
     expect((await direct.get("/api/me")).json.teams.map((team: { _id: string }) => team._id)).toContain(teamB);
   });
 
+  it("seeds calls for the first volunteer added to an empty coordinator team", async () => {
+    const team = await coord.post("/api/teams", { name: "New Demo Team", focus: "new callers" });
+    const { client } = await inviteAndAccept(h, coord, team.json.team._id, "new-team@example.org");
+    const calls = (await client.get("/api/donors")).json.donors as Array<{ team_ids: string[] }>;
+    expect(calls).toHaveLength(3);
+    expect(calls.every((donor) => donor.team_ids.includes(team.json.team._id))).toBe(true);
+  });
+
   it("reused token: second accept returns 410 already_used and changes nothing", async () => {
     const { token } = await inviteAndAccept(h, coord, teamB, "twice@example.org");
     const again = await new Client(h).post("/api/invites/accept", { token, password: "volunteer-pass-123", display_name: "V", timezone: "UTC" });

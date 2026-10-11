@@ -9,6 +9,7 @@ import { HttpError, notFound } from "../http.ts";
 import { nowOf, type Deps } from "./context.ts";
 
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const MIN_DEMO_CALL_LIST_SIZE = 3;
 
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 const newToken = () => randomBytes(32).toString("base64url");
@@ -148,7 +149,37 @@ export interface AcceptInput {
   timezone?: string;
 }
 
-async function claimInviteMembership(deps: Deps, inv: InviteDoc, user: { id: string; email: string }): Promise<{ team_id: string }> {
+/**
+ * Give a newly staffed team a usable synthetic call list. Existing donor assignments are reused
+ * so no raw call data or external records are created during invite acceptance.
+ */
+async function ensureTeamCallList(deps: Deps, inv: InviteDoc, userId: string): Promise<number> {
+  const c = collections(deps.db);
+  const current = await c.donors.countDocuments({ org_id: inv.org_id, team_ids: inv.team_id });
+  const needed = Math.max(0, MIN_DEMO_CALL_LIST_SIZE - current);
+  if (!needed) return current;
+
+  const donorIds = (await c.donors
+    .find({ org_id: inv.org_id, team_ids: { $ne: inv.team_id } }, { projection: { _id: 1 } })
+    .sort({ last_name: 1, first_name: 1 })
+    .limit(needed)
+    .toArray())
+    .map((donor) => donor._id);
+  if (!donorIds.length) return current;
+
+  await c.donors.updateMany({ _id: { $in: donorIds }, org_id: inv.org_id }, { $addToSet: { team_ids: inv.team_id } });
+  await appendAudit(deps.db, {
+    org_id: inv.org_id,
+    who: userId,
+    action: "donor.seed_team_call_list",
+    target_type: "team",
+    target_id: inv.team_id,
+    note: `${donorIds.length} synthetic donor assignments`,
+  });
+  return current + donorIds.length;
+}
+
+async function claimInviteMembership(deps: Deps, inv: InviteDoc, user: { id: string; email: string }): Promise<{ team_id: string; call_count: number }> {
   if (user.email.toLowerCase() !== inv.email) throw new HttpError(409, "sign_in_required", { email: inv.email });
   const c = collections(deps.db);
   const otherOrg = await c.memberships.findOne({ user_id: user.id, status: "active", org_id: { $ne: inv.org_id } });
@@ -167,11 +198,11 @@ async function claimInviteMembership(deps: Deps, inv: InviteDoc, user: { id: str
     { upsert: true },
   );
   await appendAudit(deps.db, { org_id: inv.org_id, who: user.id, action: "invite.accept", target_type: "invite", target_id: inv._id });
-  return { team_id: inv.team_id };
+  return { team_id: inv.team_id, call_count: await ensureTeamCallList(deps, inv, user.id) };
 }
 
 /** Accept a pending invitation by authenticated email, without needing the optional link token. */
-export async function acceptPendingInvite(deps: Deps, inviteId: string, user: { id: string; email: string }): Promise<{ team_id: string }> {
+export async function acceptPendingInvite(deps: Deps, inviteId: string, user: { id: string; email: string }): Promise<{ team_id: string; call_count: number }> {
   const inv = await collections(deps.db).invites.findOne({ _id: inviteId, email: user.email.toLowerCase() });
   if (!inv) throw notFound();
   const state = inviteState(inv, nowOf(deps));
@@ -188,7 +219,7 @@ export async function acceptInvite(
   deps: Deps,
   input: AcceptInput,
   sessionUser: { id: string; email: string } | null,
-): Promise<{ user_id: string; team_id: string; setCookie: string[] }> {
+): Promise<{ user_id: string; team_id: string; call_count: number; setCookie: string[] }> {
   const c = collections(deps.db);
   const inv = await c.invites.findOne({ token_hash: hashToken(input.token) });
   if (!inv) throw notFound();
