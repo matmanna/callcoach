@@ -8,6 +8,10 @@ CallCoach gives coordinators and volunteer callers a shared, privacy-minded way 
 
 ## Demo video
 
+<video src="https://github.com/matmanna/callcoach/raw/main/docs/video/callcoach-pitch-final.mp4" poster="docs/video/callcoach-pitch-poster.jpg" controls width="100%"></video>
+
+[![CallCoach demo video: simulated call with an approved fact cue](docs/video/callcoach-pitch-poster.jpg)](docs/video/callcoach-pitch-final.mp4)
+
 [Watch the 90-second demo (MP4)](docs/video/callcoach-pitch-final.mp4). It uses screen recordings and stills from the local app with synthetic data only. The live-call segment is a labelled simulation with a synthetic donor.
 
 ## Product views
