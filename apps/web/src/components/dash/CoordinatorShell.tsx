@@ -40,7 +40,7 @@ export const NAV: NavItem[] = [
   { to: "/coordinator/calls", label: "Calls", icon: Phone, matches: ["/coordinator/calls", "/coordinator/queue", "/coordinator/follow-ups"] },
   { to: "/coordinator/knowledge", label: "Knowledge", icon: BookOpen, matches: ["/coordinator/knowledge", "/coordinator/fact-sheets", "/coordinator/rubrics", "/coordinator/handoffs"] },
   { to: "/coordinator/insights", label: "Insights", icon: ChartColumn, matches: ["/coordinator/insights"] },
-  { to: "/coordinator/admin", label: "Admin", icon: Settings, matches: ["/coordinator/admin", "/coordinator/import", "/coordinator/invites", "/coordinator/members", "/coordinator/audit"] },
+  { to: "/coordinator/admin", label: "Admin", icon: Settings, matches: ["/coordinator/admin", "/coordinator/import", "/coordinator/audit"] },
 ];
 
 const isUnder = (pathname: string, prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);

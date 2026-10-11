@@ -4,7 +4,7 @@
  * the group is suppressed, so a total cannot be subtracted to reveal a hidden cell. Views
  * compare segments and time, never people. Language is about calls and follow-ups only.
  */
-import { DONOR_SEGMENTS, type DonorSegment } from "@sc/shared";
+import { DONOR_SEGMENTS, MIN_CELL, type DonorSegment } from "@sc/shared";
 import { collections } from "../../db/collections.ts";
 import { HttpError } from "../../http.ts";
 import { toUserKey } from "../orgs.ts";
@@ -16,6 +16,21 @@ import { cell, isShown, parseRange, weekStart, type Cell, type Scope } from "./s
 const OUTCOMES = ["reached", "voicemail", "no_answer", "declined", "rescheduled"] as const;
 const PREFERENCES = ["stop_calls", "email_preferred", "call_later"] as const;
 const BANDS = ["00-03", "03-06", "06-09", "09-12", "12-15", "15-18", "18-21", "21-24"] as const;
+const LENGTH_BUCKETS = [
+  { key: "under_2", from: 0, to: 120 },
+  { key: "2_to_5", from: 120, to: 300 },
+  { key: "5_to_10", from: 300, to: 600 },
+  { key: "over_10", from: 600, to: Number.POSITIVE_INFINITY },
+] as const;
+
+/** Median call length in minutes, one decimal. Suppressed under MIN_CELL calls. Keyed `minutes`, not `n`: it is a duration, not a count. */
+function medianMinutes(ls: CallLogRow[]): { minutes: number } | { suppressed: true } {
+  const secs = ls.map((l) => l.call_seconds).filter((s): s is number => typeof s === "number").sort((a, b) => a - b);
+  if (secs.length < MIN_CELL) return { suppressed: true };
+  const mid = secs.length / 2;
+  const median = secs.length % 2 ? secs[Math.floor(mid)]! : (secs[mid - 1]! + secs[mid]!) / 2;
+  return { minutes: Math.round((median / 60) * 10) / 10 };
+}
 
 /** Total shown only when every cell in the group is shown. */
 function safeTotal(cells: Cell[], total: number): Cell {
@@ -71,7 +86,7 @@ const bandOf = (d: Date, tz: string): string => {
   return BANDS[Math.min(7, Math.floor(hour / 3))]!;
 };
 
-export const CHART_KINDS = ["calls_per_week", "follow_up_completion", "preference_reports", "overdue_trend", "warmth_distribution", "time_bands"] as const;
+export const CHART_KINDS = ["calls_per_week", "follow_up_completion", "preference_reports", "overdue_trend", "warmth_distribution", "time_bands", "call_length", "effectiveness"] as const;
 export type ChartKind = (typeof CHART_KINDS)[number];
 
 export async function chart(deps: Deps, scope: Scope, kind: ChartKind, from?: string, to?: string, opts: { splitByTeam?: boolean } = {}) {
@@ -166,6 +181,51 @@ export async function chart(deps: Deps, scope: Scope, kind: ChartKind, from?: st
       model_ratings: levels.map((s) => ({ level: s, count: cell(rs.filter((r) => r.llm_score === s).length) })),
     }));
     return { kind, ...meta(ctx, ratings.length, donorMix(ctx, ctx.logs), "warmth ratings in range"), rows };
+  }
+
+  // call_length: calls with a recorded length, in minutes. Only logs that have call_seconds count.
+  if (kind === "call_length") {
+    const timed = ctx.logs.filter((l) => typeof l.call_seconds === "number");
+    const buckets = LENGTH_BUCKETS.map((b) => ({ ...b, logs: timed.filter((l) => l.call_seconds! >= b.from && l.call_seconds! < b.to) }));
+    const rows = buckets.map((b) => ({
+      bucket: b.key,
+      calls: cell(b.logs.length),
+      outcomes: Object.fromEntries(OUTCOMES.map((o) => [o, cell(b.logs.filter((l) => l.approved!.outcome === o).length)])),
+    }));
+    const cells = rows.map((r) => r.calls);
+    return {
+      kind,
+      ...meta(ctx, timed.length, donorMix(ctx, timed), "approved call logs with a recorded length"),
+      buckets: LENGTH_BUCKETS.map((b) => b.key),
+      outcomes: OUTCOMES,
+      rows,
+      median_minutes_by_outcome: Object.fromEntries(OUTCOMES.map((o) => [o, medianMinutes(timed.filter((l) => l.approved!.outcome === o))])),
+      total: safeTotal(cells, timed.length),
+    };
+  }
+
+  // effectiveness: per campaign, how often a call reached the donor and how often it led to a follow-up.
+  // Rates use the approved logs in range. A rate is shown only when its group has MIN_CELL calls or more.
+  if (kind === "effectiveness") {
+    const byCampaign = new Map<string, CallLogRow[]>();
+    for (const l of ctx.logs) {
+      const camp = ctx.donors.get(l.donor_id)?.campaign ?? "unknown";
+      (byCampaign.get(camp) ?? byCampaign.set(camp, []).get(camp)!).push(l);
+    }
+    const rows = [...byCampaign.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([campaign, ls]) => {
+      const calls = cell(ls.length);
+      const reached = ls.filter((l) => l.approved!.outcome === "reached").length;
+      const followUps = ls.filter((l) => l.approved!.follow_up.needed).length;
+      const timed = ls.filter((l) => typeof l.call_seconds === "number");
+      return {
+        campaign,
+        calls,
+        reached_rate: isShown(calls) ? Math.round((reached / ls.length) * 100) : ({ suppressed: true } as const),
+        follow_up_rate: isShown(calls) ? Math.round((followUps / ls.length) * 100) : ({ suppressed: true } as const),
+        median_minutes: medianMinutes(timed),
+      };
+    });
+    return { kind, ...meta(ctx, ctx.logs.length, donorMix(ctx, ctx.logs), "approved call logs"), rows };
   }
 
   // time_bands: calls completed by 3-hour band in the caller's local time.

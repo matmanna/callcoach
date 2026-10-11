@@ -1,4 +1,7 @@
 import { LoadState, PageHeader, fmtDate } from "@/components/dash/bits";
+import { InviteDialog } from "@/components/dash/InviteDialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Invites } from "@/pages/coordinator/Invites";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -39,6 +42,9 @@ export function VolunteersPage() {
   const [status, setStatus] = useState("active");
   const { data, error, loading, reload } = useApi<{ volunteers: Vol[] }>(withQuery("/volunteers", scope.q, `sort=${sort}`, `dir=${dir}`, `status=${status}`));
   const teams = flattenTeams(me?.teams ?? []).filter((t) => t.role === "coordinator");
+  const [inviteOpen, setInviteOpen] = useState(false);
+  // Invites go to the team in scope, or the first team you coordinate when the scope is "all teams".
+  const inviteTeam = scope.team !== "all" ? scope.team : (teams[0]?._id ?? "");
   const act = async (fn: () => Promise<unknown>, ok: string) => {
     try {
       await fn();
@@ -50,7 +56,11 @@ export function VolunteersPage() {
   };
   return (
     <>
-      <PageHeader title="Volunteers" description="Members across the teams in scope. No rankings: sorting is by name, team, joined date, or last activity only." />
+      <PageHeader
+        title="Volunteers"
+        description="Everyone on the teams in scope: roles, invitations, and removals. No rankings: sorting is by name, team, joined date, or last activity only."
+        actions={<Button size="sm" onClick={() => setInviteOpen(true)} disabled={!inviteTeam}>Invite</Button>}
+      />
       <div className="mb-3 flex flex-wrap gap-3">
         <Select value={`${sort}:${dir}`} onValueChange={(v) => { const [s, d] = v.split(":"); setSort(s!); setDir(d!); }}>
           <SelectTrigger className="w-52" aria-label="Sort"><SelectValue /></SelectTrigger>
@@ -110,6 +120,16 @@ export function VolunteersPage() {
           </Table>
         </div>
       </LoadState>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Pending invites</CardTitle>
+          <CardDescription>Invitations that have not been accepted yet.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Invites />
+        </CardContent>
+      </Card>
+      <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} defaultTeamId={inviteTeam} onCreated={reload} />
     </>
   );
 }

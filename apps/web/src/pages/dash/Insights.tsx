@@ -130,6 +130,55 @@ function Warmth({ range }: { range: string }) {
 }
 
 interface Seg { segment: string; calls: Cell; outcomes: Record<string, Cell>; total: Cell; donor_mix: Mix }
+function CallLength({ range }: { range: string }) {
+  type Len = { minutes: number } | { suppressed: true };
+  type R = {
+    buckets: string[];
+    outcomes: string[];
+    rows: Array<{ bucket: string; calls: Cell; outcomes: Record<string, Cell> }>;
+    median_minutes_by_outcome: Record<string, Len>;
+  };
+  const s = useChart<R>("call_length", range);
+  const bucketLabel: Record<string, string> = { under_2: "Under 2 min", "2_to_5": "2 to 5 min", "5_to_10": "5 to 10 min", over_10: "Over 10 min" };
+  const outcomes = s.data?.outcomes ?? [];
+  return (
+    <Block title="Call length" description="Approved calls that have a recorded length, grouped by length and outcome. Calls without a length are left out." state={s}>
+      <SeriesChart x="bucket" data={(s.data?.rows ?? []).map((r) => ({ bucket: bucketLabel[r.bucket] ?? r.bucket, ...Object.fromEntries(outcomes.map((o) => [o, cellValue(r.outcomes[o])])) }))} series={outcomes.map((o) => ({ key: o, label: label(o) }))} />
+      <Table>
+        <TableHeader><TableRow><TableHead>Length</TableHead><TableHead>Calls</TableHead>{outcomes.map((o) => <TableHead key={o}>{label(o)}</TableHead>)}</TableRow></TableHeader>
+        <TableBody>{s.data?.rows.map((r) => <TableRow key={r.bucket}><TableCell>{bucketLabel[r.bucket] ?? r.bucket}</TableCell><TableCell><CellText cell={r.calls} /></TableCell>{outcomes.map((o) => <TableCell key={o}><CellText cell={r.outcomes[o]} /></TableCell>)}</TableRow>)}</TableBody>
+      </Table>
+      <p className="text-sm text-muted-foreground">
+        Median length by outcome:{" "}
+        {outcomes.map((o, i) => {
+          const m = s.data?.median_minutes_by_outcome[o];
+          return (
+            <span key={o}>
+              {i ? " · " : ""}
+              {label(o)}: {m && "minutes" in m ? `${m.minutes} min` : "suppressed (under 5)"}
+            </span>
+          );
+        })}
+      </p>
+    </Block>
+  );
+}
+
+function Effectiveness({ range }: { range: string }) {
+  type R = { rows: Array<{ campaign: string; calls: Cell; reached_rate: number | { suppressed: true }; follow_up_rate: number | { suppressed: true }; median_minutes: { minutes: number } | { suppressed: true } }> };
+  const s = useChart<R>("effectiveness", range);
+  const pct = (v: number | { suppressed: true }) => (typeof v === "number" ? v : undefined);
+  return (
+    <Block title="Effectiveness by campaign" description="How often a call reached the donor, how often it led to a follow-up, and the median call length. Rates are shown only for groups of 5 or more calls." state={s}>
+      <SeriesChart x="campaign" data={(s.data?.rows ?? []).map((r) => ({ campaign: r.campaign, "Reached (%)": pct(r.reached_rate), "Follow-up needed (%)": pct(r.follow_up_rate) }))} series={[{ key: "Reached (%)", label: "Reached (%)" }, { key: "Follow-up needed (%)", label: "Follow-up needed (%)" }]} />
+      <Table>
+        <TableHeader><TableRow><TableHead>Campaign</TableHead><TableHead>Calls</TableHead><TableHead>Reached</TableHead><TableHead>Follow-up needed</TableHead><TableHead>Median length</TableHead></TableRow></TableHeader>
+        <TableBody>{s.data?.rows.map((r) => <TableRow key={r.campaign}><TableCell>{r.campaign}</TableCell><TableCell><CellText cell={r.calls} /></TableCell><TableCell>{typeof r.reached_rate === "number" ? `${r.reached_rate}%` : <CellText cell={r.reached_rate} />}</TableCell><TableCell>{typeof r.follow_up_rate === "number" ? `${r.follow_up_rate}%` : <CellText cell={r.follow_up_rate} />}</TableCell><TableCell>{"minutes" in r.median_minutes ? `${r.median_minutes.minutes} min` : <CellText cell={r.median_minutes} />}</TableCell></TableRow>)}</TableBody>
+      </Table>
+    </Block>
+  );
+}
+
 function Compare({ range }: { range: string }) {
   const scope = useTeamScope();
   const { me } = useSession();
@@ -227,12 +276,14 @@ export function InsightsPage() {
       </div>
       <Tabs defaultValue="calls">
         <TabsList className="flex-wrap">
-          <TabsTrigger value="calls">Calls</TabsTrigger><TabsTrigger value="follow">Follow-ups</TabsTrigger><TabsTrigger value="prefs">Preferences</TabsTrigger><TabsTrigger value="overdue">Overdue</TabsTrigger><TabsTrigger value="warmth">Warmth</TabsTrigger><TabsTrigger value="compare">Compare segments</TabsTrigger><TabsTrigger value="shared">Shared patterns</TabsTrigger>
+          <TabsTrigger value="calls">Calls</TabsTrigger><TabsTrigger value="follow">Follow-ups</TabsTrigger><TabsTrigger value="prefs">Preferences</TabsTrigger><TabsTrigger value="overdue">Overdue</TabsTrigger><TabsTrigger value="length">Call length</TabsTrigger><TabsTrigger value="effect">Effectiveness</TabsTrigger><TabsTrigger value="warmth">Warmth</TabsTrigger><TabsTrigger value="compare">Compare segments</TabsTrigger><TabsTrigger value="shared">Shared patterns</TabsTrigger>
         </TabsList>
         <TabsContent value="calls" className="pt-3"><CallsPerWeek range={range} /></TabsContent>
         <TabsContent value="follow" className="pt-3"><FollowUpCompletion range={range} /></TabsContent>
         <TabsContent value="prefs" className="pt-3"><Preferences range={range} /></TabsContent>
         <TabsContent value="overdue" className="pt-3"><OverdueTrend range={range} /></TabsContent>
+        <TabsContent value="length" className="pt-3"><CallLength range={range} /></TabsContent>
+        <TabsContent value="effect" className="pt-3"><Effectiveness range={range} /></TabsContent>
         <TabsContent value="warmth" className="pt-3"><Warmth range={range} /></TabsContent>
         <TabsContent value="compare" className="pt-3"><Compare range={range} /></TabsContent>
         <TabsContent value="shared" className="pt-3"><SharedPatterns /></TabsContent>

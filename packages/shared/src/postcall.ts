@@ -63,6 +63,8 @@ export const CallLogDoc = z.object({
   redaction_counts: z.record(z.string(), z.number().int().nonnegative()),
   approved: LogFields.nullable(),
   approved_at: z.date().nullable(),
+  /** Length of the call in seconds. Optional; added in schema v5. Not yet captured by the live call flow. */
+  call_seconds: z.number().int().min(0).max(14_400).nullable().optional(),
   idempotency_key: z.string().nullable(),
   corrects_log_id: id.nullable(),
   created_at: z.date(),

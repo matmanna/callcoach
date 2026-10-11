@@ -116,9 +116,9 @@ const router = createBrowserRouter([
               { path: "/coordinator/insights/time", element: <TabRedirect to="/coordinator/insights" tab="time" /> },
               { path: "/coordinator/insights/campaigns", element: <TabRedirect to="/coordinator/insights" tab="campaigns" /> },
               { path: "/coordinator/import", element: <TabRedirect to="/coordinator/admin" /> },
-              { path: "/coordinator/invites", element: <TabRedirect to="/coordinator/admin" /> },
-              { path: "/coordinator/members", element: <TabRedirect to="/coordinator/admin" /> },
-              { path: "/coordinator/audit", element: <TabRedirect to="/coordinator/admin" /> },
+              { path: "/coordinator/members", element: <TabRedirect to="/coordinator/people" tab="volunteers" /> },
+              { path: "/coordinator/invites", element: <TabRedirect to="/coordinator/people" tab="volunteers" /> },
+                            { path: "/coordinator/audit", element: <TabRedirect to="/coordinator/admin" /> },
             ],
           },
           {

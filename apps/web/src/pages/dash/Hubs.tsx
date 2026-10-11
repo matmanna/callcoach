@@ -5,8 +5,6 @@
 import { CardHub, TabHub } from "@/components/dash/Hub";
 import { Button } from "@/components/ui/button";
 import { Import } from "@/pages/coordinator/Import";
-import { Invites } from "@/pages/coordinator/Invites";
-import { Members } from "@/pages/coordinator/Members";
 import { Teams } from "@/pages/coordinator/Teams";
 import { Link } from "react-router";
 import { AuditPage } from "./Audit";
@@ -31,7 +29,7 @@ export function PeopleHub() {
       description="Donors, volunteers, and teams."
       tabs={[
         { key: "contacts", label: "Contacts", render: () => <ContactsPage /> },
-        { key: "volunteers", label: "Volunteers", render: () => <VolunteersPage /> },
+        { key: "volunteers", label: "Volunteers and invites", render: () => <VolunteersPage /> },
         { key: "teams", label: "Teams", render: () => <Teams /> },
       ]}
     />
@@ -91,11 +89,9 @@ export function AdminHub() {
   return (
     <CardHub
       title="Admin"
-      description="Data, invitations, members, and the audit log."
+      description="Bulk data imports and the audit log. People and invitations live under People."
       cards={[
         { key: "imports", title: "Imports", description: "Donors, gifts, fact sheets, and rubrics from CSV or JSON.", render: () => <Import /> },
-        { key: "invites", title: "Invites", description: "Invitation links for volunteers and coordinators.", render: () => <Invites /> },
-        { key: "members", title: "Members", description: "Who is on which team, and in what role.", render: () => <Members /> },
         { key: "audit", title: "Audit log", description: "Every change, in order. Append-only.", render: () => <AuditPage /> },
       ]}
     />

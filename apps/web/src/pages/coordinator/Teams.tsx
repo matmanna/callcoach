@@ -108,7 +108,7 @@ export function Teams() {
                       Edit
                     </Button>
                     <Button size="sm" variant="outline" asChild>
-                      <Link to={`/coordinator/members?team=${t._id}`}>Members</Link>
+                      <Link to={`/coordinator/people?tab=volunteers&team=${t._id}`}>Volunteers</Link>
                     </Button>
                     {t.depth > 0 ? (
                       <Button size="sm" variant="ghost" onClick={() => archive(t)}>

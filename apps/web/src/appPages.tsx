@@ -34,7 +34,6 @@ export { VolunteerDetailPage } from "@/pages/dash/VolunteerDetail";
 export { VolunteersPage } from "@/pages/dash/Volunteers";
 export { Import } from "@/pages/coordinator/Import";
 export { Invites } from "@/pages/coordinator/Invites";
-export { Members } from "@/pages/coordinator/Members";
 export { Teams } from "@/pages/coordinator/Teams";
 export { Brief } from "@/pages/call/Brief";
 export { DonorList } from "@/pages/call/DonorList";

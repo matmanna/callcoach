@@ -5,8 +5,9 @@
 import type { Db } from "mongodb";
 import { AUDIT_COLLECTION, AUTH_COLLECTIONS, TENANT_COLLECTIONS } from "./collections.ts";
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 export const SCHEMA_CHANGES: Record<number, string> = {
+  5: "Insights: optional call_logs.call_seconds (call length) for call_length and effectiveness charts.",
   4: "Onboarding: optional organizations profile fields (nonprofit_status, annual_revenue_band, staff_size_band, mission, country) and optional rubric item weight (missing means 1).",
   3: "K3: donor_limits, fact_item_versions, rubric_versions, knowledge_entries, handoff_packets, patterns; optional donors.region and rubrics.version.",
   1: "S2: identity, teams, memberships, invites, donors, gifts, campaigns, fact_sheets, rubrics, seed_runs, audit_log.",
