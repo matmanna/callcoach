@@ -122,6 +122,16 @@ describe("contacts and dossier", () => {
     expect((await coord.get(`/api/contacts/${d._id}`)).json.preferences).toHaveLength(1);
   });
 
+  it("two concurrent first opens write version 1 exactly once", async () => {
+    const d = donors.find((x) => x.external_id === "d-206")!;
+    const [a, b, c2] = await Promise.all([coord.get(`/api/contacts/${d._id}`), coord.get(`/api/contacts/${d._id}/history`), coord.get(`/api/contacts/${d._id}`)]);
+    expect([a.status, b.status, c2.status]).toEqual([200, 200, 200]);
+    const versions = (await coord.get(`/api/contacts/${d._id}/history`)).json.versions as Array<{ version: number; status: string }>;
+    expect(versions).toHaveLength(2); // d-206 has two imported limits
+    expect(versions.every((v) => v.version === 1 && v.status === "active")).toBe(true);
+    expect((await coord.get(`/api/contacts/${d._id}`)).json.limits).toHaveLength(2);
+  });
+
   it("deleting a dossier needs typed confirmation, removes approved entries, writes one audit row", async () => {
     const d = donors.find((x) => x.external_id === "d-209")!;
     const log = (await addLogs(1, { team: alumni, caller: callerId, donorIdx: 9, fields: { preference: "stop_calls" } }))[0]!;
@@ -191,7 +201,7 @@ describe("minimum cell size: suppressed server-side", () => {
 
   it("a cell at exactly 5 is shown, under 5 is suppressed, and totals hide when a cell is suppressed", async () => {
     await addLogs(5, { team: alumni, caller: callerId, donorIdx: 6, daysAgo: 4, fields: { outcome: "no_answer" } });
-    const r = (await coord.get("/api/insights/charts?kind=calls_per_week")).json;
+    const r = (await coord.get("/api/insights/charts?kind=calls_per_week&split=team")).json;
     const alumniRow = r.rows.find((x: { team: string; outcomes: Record<string, { n?: number }> }) => x.team === "Alumni Callers" && x.outcomes.no_answer?.n === 5);
     expect(alumniRow).toBeTruthy();
     expect(alumniRow.outcomes.reached).toEqual({ suppressed: true });

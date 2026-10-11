@@ -74,7 +74,7 @@ const bandOf = (d: Date, tz: string): string => {
 export const CHART_KINDS = ["calls_per_week", "follow_up_completion", "preference_reports", "overdue_trend", "warmth_distribution", "time_bands"] as const;
 export type ChartKind = (typeof CHART_KINDS)[number];
 
-export async function chart(deps: Deps, scope: Scope, kind: ChartKind, from?: string, to?: string) {
+export async function chart(deps: Deps, scope: Scope, kind: ChartKind, from?: string, to?: string, opts: { splitByTeam?: boolean } = {}) {
   const ctx = await context(deps, scope, from, to);
   const px = p2(deps.db);
   const now = nowOf(deps);
@@ -82,7 +82,8 @@ export async function chart(deps: Deps, scope: Scope, kind: ChartKind, from?: st
   if (kind === "calls_per_week") {
     const keys = new Map<string, CallLogRow[]>();
     for (const l of ctx.logs) {
-      const k = `${weekStart(l.approved_at!)}|${l.team_id}`;
+      // Aggregated across the teams in scope unless a split is requested (fewer small cells to suppress).
+      const k = `${weekStart(l.approved_at!)}|${opts.splitByTeam ? l.team_id : "all"}`;
       (keys.get(k) ?? keys.set(k, []).get(k)!).push(l);
     }
     const rows = [...keys.entries()]
@@ -90,7 +91,7 @@ export async function chart(deps: Deps, scope: Scope, kind: ChartKind, from?: st
       .map(([k, ls]) => {
         const [week, teamId] = k.split("|") as [string, string];
         const cells = OUTCOMES.map((o) => cell(ls.filter((l) => l.approved!.outcome === o).length));
-        return { week, team_id: teamId, team: scope.teams.get(teamId)?.name ?? "", outcomes: Object.fromEntries(OUTCOMES.map((o, i) => [o, cells[i]!])), total: safeTotal(cells, ls.length) };
+        return { week, team_id: teamId === "all" ? null : teamId, team: teamId === "all" ? "All teams in scope" : (scope.teams.get(teamId)?.name ?? ""), outcomes: Object.fromEntries(OUTCOMES.map((o, i) => [o, cells[i]!])), total: safeTotal(cells, ls.length) };
       });
     return { kind, ...meta(ctx, ctx.logs.length, donorMix(ctx, ctx.logs), "approved call logs"), outcomes: OUTCOMES, rows };
   }

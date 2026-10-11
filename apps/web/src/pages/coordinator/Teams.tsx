@@ -6,11 +6,32 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api, errorMessage } from "@/lib/api";
 import { flattenTeams, useSession, type TeamNode } from "@/lib/session";
+import { useApi } from "@/lib/useApi";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 
 type DialogState = { mode: "create"; parent: TeamNode | null } | { mode: "edit"; team: TeamNode } | null;
+
+interface PanelRow { id: string; name: string; focus: string; members: number; active_callers: number; open_follow_ups: number; overdue: number; handoff_packets_pending: number }
+
+/** Per-team panel (K3): active callers, open follow-ups, overdue, handoff packets pending. */
+function TeamPanel() {
+  const { data } = useApi<{ teams: PanelRow[] }>("/dashboard/teams");
+  if (!data) return null;
+  return (
+    <Card className="mt-6">
+      <CardHeader><CardTitle>Team panel</CardTitle><CardDescription>Overdue is computed in each team's time zone.</CardDescription></CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader><TableRow><TableHead>Team</TableHead><TableHead>Members</TableHead><TableHead>Active callers</TableHead><TableHead>Open follow-ups</TableHead><TableHead>Overdue</TableHead><TableHead>Handoff packets pending</TableHead></TableRow></TableHeader>
+          <TableBody>{data.teams.map((t) => <TableRow key={t.id}><TableCell>{t.name}</TableCell><TableCell>{t.members}</TableCell><TableCell>{t.active_callers}</TableCell><TableCell>{t.open_follow_ups}</TableCell><TableCell>{t.overdue}</TableCell><TableCell>{t.handoff_packets_pending}</TableCell></TableRow>)}</TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function Teams() {
   const { me, refresh } = useSession();
@@ -100,6 +121,8 @@ export function Teams() {
           ))}
         </TableBody>
       </Table>
+
+      <TeamPanel />
 
       <Dialog open={!!dialog} onOpenChange={(o) => !o && setDialog(null)}>
         <DialogContent>

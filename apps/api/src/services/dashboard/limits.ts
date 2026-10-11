@@ -14,11 +14,13 @@ const dateOf = (d: Date) => d.toISOString().slice(0, 10);
 export async function ensureLimitRecords(deps: Deps, donor: DonorDoc, actor: string): Promise<void> {
   const c = collections(deps.db);
   if (!donor.limits.length || (await c.donor_limits.countDocuments({ org_id: donor.org_id, donor_id: donor._id, kind: "limit" }, { limit: 1 }))) return;
-  const docs: DonorLimitDoc[] = donor.limits.map((value) => ({
+  // Deterministic keys: two concurrent first opens collide on the unique (donor, key, version)
+  // index instead of both inserting, so version 1 is written exactly once.
+  const docs: DonorLimitDoc[] = donor.limits.map((value, i) => ({
     _id: randomUUID(),
     org_id: donor.org_id,
     donor_id: donor._id,
-    key: randomUUID(),
+    key: `import-${i + 1}`,
     kind: "limit",
     version: 1,
     value,
@@ -29,10 +31,11 @@ export async function ensureLimitRecords(deps: Deps, donor: DonorDoc, actor: str
     created_at: nowOf(deps),
   }));
   try {
-    await c.donor_limits.insertMany(docs);
+    await c.donor_limits.insertMany(docs, { ordered: false });
   } catch (err) {
     // A concurrent first open inserted them already (duplicate key). Safe to ignore.
-    if (!(err as { code?: number }).code || (err as { code?: number }).code !== 11000) throw err;
+    const e = err as { code?: number; writeErrors?: Array<{ code?: number }> };
+    if (e.code !== 11000 && !(e.writeErrors?.length && e.writeErrors.every((w) => w.code === 11000))) throw err;
   }
 }
 

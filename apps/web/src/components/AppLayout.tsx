@@ -21,18 +21,7 @@ export function AppLayout() {
         <span className="font-semibold">Stewardship Copilot</span>
         {me.org ? <span className="text-sm text-muted-foreground">{me.org.name}</span> : null}
         <nav className="flex flex-wrap gap-4 text-sm">
-          {coord ? (
-            <>
-              <NavLink to="/coordinator" end className={link}>Home</NavLink>
-              <NavLink to="/coordinator/teams" className={link}>Teams</NavLink>
-              <NavLink to="/coordinator/members" className={link}>Members</NavLink>
-              <NavLink to="/coordinator/invites" className={link}>Invites</NavLink>
-              <NavLink to="/coordinator/import" className={link}>Import</NavLink>
-              <NavLink to="/coordinator/fact-sheets" className={link}>Fact sheets</NavLink>
-            </>
-          ) : (
-            <NavLink to="/home" className={link}>Home</NavLink>
-          )}
+          {coord ? <NavLink to="/coordinator" className={link}>Dashboard</NavLink> : <NavLink to="/home" className={link}>Home</NavLink>}
           <NavLink to="/profile" className={link}>Profile</NavLink>
         </nav>
         <div className="ml-auto flex items-center gap-3 text-sm">
@@ -63,11 +52,4 @@ export function HomeRedirect() {
   if (loading) return null;
   if (!me) return <Navigate to="/sign-in" replace />;
   return <Navigate to={isCoordinator(me) ? "/coordinator" : "/home"} replace />;
-}
-
-/** UI-side gate for coordinator pages. The API independently returns 403/404. */
-export function CoordinatorOnly({ children }: { children: React.ReactNode }) {
-  const { me } = useSession();
-  if (!isCoordinator(me)) return <Navigate to="/home" replace />;
-  return <>{children}</>;
 }

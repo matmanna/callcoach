@@ -235,7 +235,7 @@ export function dashboardRoutes(api: Hono<ApiEnv>, deps: Deps) {
     const q = c.req.query();
     const kind = q.kind as ChartKind;
     if (!CHART_KINDS.includes(kind)) throw new HttpError(400, "unknown_chart", { allowed: CHART_KINDS });
-    return c.json(await chart(deps, scopeOf(c), kind, q.from, q.to));
+    return c.json(await chart(deps, scopeOf(c), kind, q.from, q.to, { splitByTeam: q.split === "team" }));
   });
   api.get("/insights/map", async (c) => {
     const q = c.req.query();

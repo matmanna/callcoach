@@ -11,7 +11,8 @@
     "test": "vitest run",
     "typecheck": "pnpm -r --parallel typecheck",
     "db:seed": "pnpm --filter @sc/api db:seed",
-    "db:init": "pnpm --filter @sc/api db:init"
+    "db:init": "pnpm --filter @sc/api db:init",
+    "db:seed:demo": "pnpm --filter @sc/api db:seed:demo"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
