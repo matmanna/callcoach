@@ -31,8 +31,11 @@ export function Invites() {
   useEffect(() => void load(), [load]);
   const act = async (path: string, ok: string) => {
     try {
-      await api(path, { body: {} });
-      toast.success(ok);
+      const r = await api<{ link?: string }>(path, { body: {} });
+      if (r.link) {
+        await navigator.clipboard?.writeText(r.link).catch(() => undefined);
+        toast.success("New invite link copied. Send it to them directly.", { description: r.link, duration: 20000 });
+      } else toast.success(ok);
       await load();
     } catch (err) {
       toast.error(errorMessage(err));

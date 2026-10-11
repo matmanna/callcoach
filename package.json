@@ -12,6 +12,11 @@
     "typecheck": "pnpm -r --parallel typecheck",
     "db:seed": "pnpm --filter @sc/api db:seed",
     "db:init": "pnpm --filter @sc/api db:init",
+    "db:seed:demo": "pnpm --filter @sc/api db:seed:demo",
+    "infra:build": "node infra/build-api.mjs",
+    "infra:validate": "cd infra && sam validate --lint",
+    "infra:deploy": "pnpm infra:build && cd infra && sam deploy --config-env",
+    "deploy:web": "infra/deploy-web.sh",
     "desktop:dev": "concurrently -k -n api,desktop -c green,cyan \"pnpm --filter @sc/api dev\" \"pnpm --filter @sc/desktop dev\"",
     "desktop:build": "pnpm --filter @sc/desktop build",
     "models:fetch": "pnpm --filter @sc/web models:fetch"
@@ -19,6 +24,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "concurrently": "^10.0.6",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^5.9.0",
     "vitest": "^5.0.3"

@@ -13,9 +13,9 @@ beforeAll(async () => {
 afterAll(async () => h?.close());
 
 const BAD = `${seedFile("donors.csv").trim()}
-d-301,Ada,,,,,Spring Youth Appeal 2026,$1-$49,1,$1-$49,,Student Callers
-d-302,Bo,Smith,,,,Spring Youth Appeal 2026,$1-$49,1,$1-$49,,Nonexistent Team
-d-201,Dup,Licate,,,,Spring Youth Appeal 2026,$1-$49,1,$1-$49,,Student Callers
+d-301,Ada,,,,,,Spring Youth Appeal 2026,$1-$49,1,$1-$49,,Student Callers
+d-302,Bo,Smith,,,,,Spring Youth Appeal 2026,$1-$49,1,$1-$49,,Nonexistent Team
+d-201,Dup,Licate,,,,,Spring Youth Appeal 2026,$1-$49,1,$1-$49,,Student Callers
 `;
 
 describe("donor import", () => {

@@ -274,6 +274,7 @@ export async function commitImport(deps: Deps, access: Access, orgId: string, ki
         spouse_name: p.spouse_name,
         employer: p.employer,
         town: p.town,
+        region: p.region,
         campaign: p.campaign,
         gift_band: p.gift_band,
         past_gift_count: p.past_gift_count,

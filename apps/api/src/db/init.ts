@@ -5,8 +5,9 @@
 import type { Db } from "mongodb";
 import { AUDIT_COLLECTION, AUTH_COLLECTIONS, TENANT_COLLECTIONS } from "./collections.ts";
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const SCHEMA_CHANGES: Record<number, string> = {
+  3: "K3: donor_limits, fact_item_versions, rubric_versions, knowledge_entries, handoff_packets, patterns; optional donors.region and rubrics.version.",
   1: "S2: identity, teams, memberships, invites, donors, gifts, campaigns, fact_sheets, rubrics, seed_runs, audit_log.",
   2: "P2: call_logs, call_flags, pending_limits, follow_ups, warmth_ratings and scoped idempotency indexes.",
 };
@@ -35,6 +36,13 @@ export async function initDb(db: Db, log: (s: string) => void = () => {}): Promi
   await db.collection("campaigns").createIndex({ org_id: 1, name: 1 }, { unique: true });
   await db.collection("fact_sheets").createIndex({ org_id: 1 });
   await db.collection("rubrics").createIndex({ org_id: 1, team_id: 1 });
+  await db.collection("donor_limits").createIndex({ org_id: 1, donor_id: 1, key: 1, version: 1 }, { unique: true });
+  await db.collection("fact_item_versions").createIndex({ org_id: 1, sheet_id: 1, item_id: 1, version: 1 }, { unique: true });
+  await db.collection("rubric_versions").createIndex({ org_id: 1, rubric_id: 1, version: 1 }, { unique: true });
+  await db.collection("knowledge_entries").createIndex({ org_id: 1, status: 1, type: 1 });
+  await db.collection("handoff_packets").createIndex({ org_id: 1, team_id: 1, status: 1 });
+  await db.collection("patterns").createIndex({ org_id: 1, status: 1 });
+  await db.collection("donors").createIndex({ org_id: 1, region: 1 });
   await db.collection("seed_runs").createIndex({ org_id: 1, created_at: -1 });
   await db.collection("call_logs").createIndex({ org_id: 1, donor_id: 1, approved_at: -1 });
   await db.collection("call_logs").createIndex({ org_id: 1, caller_id: 1, idempotency_key: 1 }, { unique: true, partialFilterExpression: { idempotency_key: { $type: "string" } } });

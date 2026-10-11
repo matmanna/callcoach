@@ -1,9 +1,10 @@
 import { PhraseRulesFile, type Donor, type DonorDoc, type LogFields } from "@sc/shared";
 import { noteContext, scrubNote } from "@sc/rules";
-import { readFileSync } from "node:fs";
 import { HttpError } from "../http.ts";
 
-const phraseRules = PhraseRulesFile.parse(JSON.parse(readFileSync(new URL("../../../../data/phrase-rules.json", import.meta.url), "utf8"))).rules;
+// Static import so esbuild bundles the rules into the Lambda (no runtime file access).
+import phraseRulesJson from "../../../../data/phrase-rules.json" with { type: "json" };
+const phraseRules = PhraseRulesFile.parse(phraseRulesJson).rules;
 
 function redactorDonor(donor: DonorDoc): Donor {
   return {

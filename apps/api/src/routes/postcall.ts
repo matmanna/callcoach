@@ -1,3 +1,4 @@
+import { changeLimit } from "../services/dashboard/limits.ts";
 import {
   ApproveLogPayload,
   DecisionBody,
@@ -97,7 +98,13 @@ async function decideLimit(deps: Deps, access: Access, id: string, action: "appr
   await withTx(deps.client, async (session) => {
     const updated = await c.pending_limits.updateOne({ _id: id, org_id: orgId, status: "pending" }, { $set: { status: action === "approve" ? "approved" : "rejected", decided_by: access.user.id, decided_at: now } }, { session });
     if (!updated.modifiedCount) throw new HttpError(409, "limit_already_decided");
-    if (action === "approve") await c.donors.updateOne({ _id: pending.donor_id, org_id: orgId }, { $addToSet: { limits: pending.limit }, $set: { updated_at: now } }, { session });
+    if (action === "approve") {
+      // Versioned dossier limit (K3): keeps history and mirrors the active limits onto donors.limits.
+      const donor = await c.donors.findOne({ _id: pending.donor_id, org_id: orgId }, { session });
+      if (!donor) throw notFound();
+      const log = await c.call_logs.findOne({ _id: pending.log_id, org_id: orgId }, { session });
+      await changeLimit(deps, orgId, donor, access.user.id, { action: "add", value: pending.limit, source: "Donor request (approved call log)", stated_on: (log?.approved_at ?? pending.created_at).toISOString().slice(0, 10) }, "limit", session);
+    }
     await appendAudit(deps.db, { org_id: orgId, who: access.user.id, action: `limit.${action}`, target_type: "pending_limit", target_id: id }, session);
   });
   return c.pending_limits.findOne({ _id: id, org_id: orgId });

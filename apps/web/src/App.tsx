@@ -2,7 +2,7 @@ import { Landing } from "@/routes/landing/Landing";
 import { LegalPlaceholder } from "@/routes/landing/LegalPlaceholder";
 import { ArrowLeft, ArrowRight, House } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { lazy, Suspense, type ComponentType, type ReactNode } from "react";
+import { lazy, Suspense, type ComponentType } from "react";
 import { createBrowserRouter, Link, Outlet, RouterProvider } from "react-router";
 
 type Pages = typeof import("./appPages.tsx");
@@ -14,19 +14,34 @@ function page<K extends keyof Pages>(name: K) {
 
 const SessionRoot = page("SessionRoot");
 const AppLayout = page("AppLayout");
-const CoordinatorOnly = page("CoordinatorOnly");
+const CoordinatorShell = page("CoordinatorShell");
 const HomeRedirect = page("HomeRedirect");
 const SignIn = page("SignIn");
 const SignUp = page("SignUp");
 const AcceptInvite = page("AcceptInvite");
 const Onboarding = page("Onboarding");
-const CoordinatorHome = page("CoordinatorHome");
-const FactSheets = page("FactSheets");
+const OverviewPage = page("OverviewPage");
+const ContactsPage = page("ContactsPage");
+const ContactDetailPage = page("ContactDetailPage");
+const VolunteersPage = page("VolunteersPage");
+const VolunteerDetailPage = page("VolunteerDetailPage");
+const CallsPage = page("CallsPage");
+const CallDetailPage = page("CallDetailPage");
+const FollowUpsPage = page("FollowUpsPage");
+const QueuePage = page("QueuePage");
+const FactSheetEditorPage = page("FactSheetEditorPage");
+const RubricsPage = page("RubricsPage");
+const KnowledgePage = page("KnowledgePage");
+const HandoffsPage = page("HandoffsPage");
+const InsightsPage = page("InsightsPage");
+const GeographyPage = page("GeographyPage");
+const TimeBandsPage = page("TimeBandsPage");
+const CampaignsInsightsPage = page("CampaignsInsightsPage");
+const AuditPage = page("AuditPage");
 const Import = page("Import");
 const Invites = page("Invites");
 const Members = page("Members");
 const Teams = page("Teams");
-const ReviewQueue = page("ReviewQueue");
 const Brief = page("Brief");
 const DonorList = page("DonorList");
 const LiveCall = page("LiveCall");
@@ -35,8 +50,6 @@ const PostCall = page("PostCall");
 const Profile = page("Profile");
 const VolunteerHome = page("VolunteerHome");
 const Placeholder = page("Placeholder");
-
-const coord = (el: ReactNode) => <CoordinatorOnly>{el}</CoordinatorOnly>;
 
 /** Browser-like controls are shown only inside the Tauri WebView. */
 function DesktopUtilityBar() {
@@ -90,18 +103,39 @@ const router = createBrowserRouter([
           { path: "/invite/:token", element: <AcceptInvite /> },
           { path: "/onboarding", element: <Onboarding /> },
           {
+            // Coordinator dashboard (K3). The shell redirects non-coordinators; the API enforces access.
+            element: <CoordinatorShell />,
+            children: [
+              { path: "/coordinator", element: <OverviewPage /> },
+              { path: "/coordinator/contacts", element: <ContactsPage /> },
+              { path: "/coordinator/contacts/:id", element: <ContactDetailPage /> },
+              { path: "/coordinator/volunteers", element: <VolunteersPage /> },
+              { path: "/coordinator/volunteers/:id", element: <VolunteerDetailPage /> },
+              { path: "/coordinator/teams", element: <Teams /> },
+              { path: "/coordinator/calls", element: <CallsPage /> },
+              { path: "/coordinator/calls/:id", element: <CallDetailPage /> },
+              { path: "/coordinator/follow-ups", element: <FollowUpsPage /> },
+              { path: "/coordinator/queue", element: <QueuePage /> },
+              { path: "/coordinator/fact-sheets", element: <FactSheetEditorPage /> },
+              { path: "/coordinator/rubrics", element: <RubricsPage /> },
+              { path: "/coordinator/knowledge", element: <KnowledgePage /> },
+              { path: "/coordinator/handoffs", element: <HandoffsPage /> },
+              { path: "/coordinator/insights", element: <InsightsPage /> },
+              { path: "/coordinator/insights/geography", element: <GeographyPage /> },
+              { path: "/coordinator/insights/time", element: <TimeBandsPage /> },
+              { path: "/coordinator/insights/campaigns", element: <CampaignsInsightsPage /> },
+              { path: "/coordinator/import", element: <Import /> },
+              { path: "/coordinator/invites", element: <Invites /> },
+              { path: "/coordinator/members", element: <Members /> },
+              { path: "/coordinator/audit", element: <AuditPage /> },
+            ],
+          },
+          {
             element: <AppLayout />,
             children: [
               { path: "/app", element: <HomeRedirect /> },
               { path: "/home", element: <VolunteerHome /> },
               { path: "/profile", element: <Profile /> },
-              { path: "/coordinator", element: coord(<CoordinatorHome />) },
-              { path: "/coordinator/teams", element: coord(<Teams />) },
-              { path: "/coordinator/members", element: coord(<Members />) },
-              { path: "/coordinator/invites", element: coord(<Invites />) },
-              { path: "/coordinator/import", element: coord(<Import />) },
-              { path: "/coordinator/fact-sheets", element: coord(<FactSheets />) },
-              { path: "/coordinator/queue", element: coord(<ReviewQueue />) },
               { path: "/calls", element: <DonorList /> },
               { path: "/call/:donorId/brief", element: <Brief /> },
               { path: "/call/:donorId/post", element: <PostCall /> },

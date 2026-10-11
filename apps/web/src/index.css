@@ -5,8 +5,41 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Faire Sprig Sans for headings (platform and landing). Body text keeps Geist (platform) or Figtree (landing). */
+/* Size-matched fallback so the swap to Sprig Sans doesn't shift headings. Measured against Arial
+   at 100px: Sprig is 108.45% as wide, ascent 99 vs 91, descent 26 vs 21. Overrides are divided by size-adjust. */
+@font-face {
+    font-family: "Sprig Fallback";
+    src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("Helvetica");
+    size-adjust: 108.45%;
+    ascent-override: 91.3%;
+    descent-override: 24%;
+    line-gap-override: 0%;
+}
+@font-face {
+    font-family: "Faire Sprig Sans";
+    src: url("./assets/fonts/FaireSprigSans-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Faire Sprig Sans";
+    src: url("./assets/fonts/FaireSprigSans-Medium.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Faire Sprig Sans";
+    src: url("./assets/fonts/FaireSprigSans-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
 @theme inline {
-    --font-heading: var(--font-sans);
+    --font-heading: 'Faire Sprig Sans', 'Sprig Fallback', 'Geist Variable', sans-serif;
     --font-sans: 'Geist Variable', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -123,5 +156,13 @@
     }
   html {
     @apply font-sans;
+    }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
     }
 }
