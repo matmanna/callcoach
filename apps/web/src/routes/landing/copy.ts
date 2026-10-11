@@ -30,7 +30,6 @@ export const nav = [
 ];
 
 export const hero = {
-  eyebrow: "For volunteer calling teams",
   title: "Keep your calling team's memory and follow-through in one calm place.",
   /** Phrase in the title shown on a soft highlighter. */
   highlight: "one calm place",

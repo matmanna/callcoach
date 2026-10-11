@@ -13,7 +13,7 @@ export const H = 500;
  * Draws children on a fixed 800×500 canvas and scales it to the slot's width, so the
  * mock screens keep their proportions from phone to desktop.
  */
-export function Canvas({ children, className }: { children: ReactNode; className?: string }) {
+export function Canvas({ children, className, interactive = false }: { children: ReactNode; className?: string; interactive?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   useEffect(() => {
@@ -24,7 +24,8 @@ export function Canvas({ children, className }: { children: ReactNode; className
     return () => ro.disconnect();
   }, []);
   return (
-    <div ref={ref} aria-hidden="true" className="absolute inset-0 overflow-hidden">
+    // Decorative by default. An interactive canvas is exposed to assistive tech, so its controls work.
+    <div ref={ref} aria-hidden={interactive ? undefined : "true"} className="absolute inset-0 overflow-hidden">
       <div className={cn("absolute top-0 left-0 origin-top-left text-[13px] text-(--lp-ink)", className)} style={{ width: W, height: H, transform: `scale(${scale})` }}>
         {children}
       </div>
