@@ -172,4 +172,34 @@ describe("reduced motion", () => {
     const reduced = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
     for (const cls of [".lp-edge > i", ".lp-svg-beam", ".lp-ripple > span", ".lp-lift:hover"]) expect(reduced).toContain(cls);
   });
+
+  it("hero illustration: tabs switch the list, rows select a summary, send is gated on approval", () => {
+    renderLanding();
+    const hero = document.getElementById("top")!;
+    const within_ = within(hero);
+    // Switch to Briefs: only rows that need a brief or follow-up appear.
+    fireEvent.click(within_.getByRole("button", { name: "Briefs" }));
+    expect(within_.getByRole("button", { name: "Briefs" }).getAttribute("aria-pressed")).toBe("true");
+    expect(within_.getByText("Briefs to review")).toBeTruthy();
+    expect(within_.queryByRole("button", { name: /Maya R\./ })).toBeNull();
+    // Theo needs a brief, so sending is disabled.
+    fireEvent.click(within_.getByRole("button", { name: /Theo B\./ }));
+    const send = within_.getByRole("button", { name: "Needs an approved brief" });
+    expect((send as HTMLButtonElement).disabled).toBe(true);
+    // Back to This week, pick an approved donor, send.
+    fireEvent.click(within_.getByRole("button", { name: "This week" }));
+    fireEvent.click(within_.getByRole("button", { name: /Maya R\./ }));
+    expect(within_.getByText(/Thanked for the anniversary gift/)).toBeTruthy();
+    fireEvent.click(within_.getByRole("button", { name: "Send approved note" }));
+    expect(within_.getByRole("button", { name: "Sent to the donor record" })).toBeTruthy();
+    expect(within_.getByText("1 note sent this visit")).toBeTruthy();
+  });
+
+  it("hero illustration: the ledger tab lists what left the device", () => {
+    renderLanding();
+    const hero = within(document.getElementById("top")!);
+    fireEvent.click(hero.getByRole("button", { name: "Ledger" }));
+    expect(hero.getByRole("list", { name: "Ledger entries" })).toBeTruthy();
+    expect(hero.getByText("Approved summary, 3 tags")).toBeTruthy();
+  });
 });
