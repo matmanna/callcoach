@@ -11,6 +11,11 @@ import { Import } from "@/pages/coordinator/Import";
 import { Invites } from "@/pages/coordinator/Invites";
 import { Members } from "@/pages/coordinator/Members";
 import { Teams } from "@/pages/coordinator/Teams";
+import { ReviewQueue } from "@/pages/coordinator/ReviewQueue";
+import { Brief } from "@/pages/call/Brief";
+import { DonorList } from "@/pages/call/DonorList";
+import { Warmth } from "@/pages/call/Warmth";
+import { PostCall } from "@/pages/call/PostCall";
 import { Profile } from "@/pages/volunteer/Profile";
 import { VolunteerHome } from "@/pages/volunteer/VolunteerHome";
 import type { ReactNode } from "react";
@@ -41,6 +46,11 @@ const router = createBrowserRouter([
       { path: "/coordinator/invites", element: coord(<Invites />) },
       { path: "/coordinator/import", element: coord(<Import />) },
       { path: "/coordinator/fact-sheets", element: coord(<FactSheets />) },
+      { path: "/coordinator/queue", element: coord(<ReviewQueue />) },
+      { path: "/calls", element: <DonorList /> },
+      { path: "/call/:donorId/brief", element: <Brief /> },
+      { path: "/call/:donorId/post", element: <PostCall /> },
+      { path: "/logs/:logId/warmth", element: <Warmth /> },
       { path: "/gifts", element: <Placeholder title="Gifts" /> },
       { path: "/call/:id", element: <Placeholder title="Call" /> },
       { path: "/review/:id", element: <Placeholder title="Review" /> },

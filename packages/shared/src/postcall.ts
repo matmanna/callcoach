@@ -43,6 +43,8 @@ export const LogFields = z.strictObject({
   preference: Preference,
   follow_up: FollowUpDraft,
   flags: z.array(LogFlag).max(3),
+}).superRefine((value, ctx) => {
+  if (value.follow_up.needed && !value.follow_up.action) ctx.addIssue({ code: "custom", path: ["follow_up", "action"], message: "action is required when follow-up is needed" });
 });
 export type LogFields = z.infer<typeof LogFields>;
 
@@ -114,6 +116,7 @@ export const PendingLimitDoc = z.object({
 export type PendingLimitDoc = z.infer<typeof PendingLimitDoc>;
 
 export const FollowUpStatus = z.enum(["open", "done", "handed_off", "cancelled"]);
+export type FollowUpStatus = z.infer<typeof FollowUpStatus>;
 
 export const FollowUpDoc = z.object({
   _id: id,
@@ -129,6 +132,7 @@ export const FollowUpDoc = z.object({
   closed_at: z.date().nullable(),
   /** Idempotency keys already applied to this follow-up (complete, handoff, cancel). */
   action_keys: z.array(z.string()),
+  action_results: z.array(z.object({ key: z.string(), actor_user_id: id, status: FollowUpStatus, owner_user_id: id, closed_at: z.date().nullable() })).optional(),
   last_note: z.string().max(300).nullable(),
 });
 export type FollowUpDoc = z.infer<typeof FollowUpDoc>;
@@ -176,5 +180,6 @@ export const LogRulesFile = z.object({
   outcome: z.array(z.object({ outcome: Outcome, triggers: z.array(lower).min(1) })),
   preference: z.array(z.object({ preference: Preference.exclude(["none"]), triggers: z.array(lower).min(1) })),
   follow_up: z.array(z.object({ triggers: z.array(lower).min(1), action: z.string().max(120) })),
+  flag: z.array(z.object({ label: LogFlag, triggers: z.array(lower).min(1) })).optional(),
 });
 export type LogRulesFile = z.infer<typeof LogRulesFile>;

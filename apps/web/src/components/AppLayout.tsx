@@ -29,10 +29,12 @@ export function AppLayout() {
               <NavLink to="/coordinator/invites" className={link}>Invites</NavLink>
               <NavLink to="/coordinator/import" className={link}>Import</NavLink>
               <NavLink to="/coordinator/fact-sheets" className={link}>Fact sheets</NavLink>
+              <NavLink to="/coordinator/queue" className={link}>Review queue</NavLink>
             </>
           ) : (
             <NavLink to="/home" className={link}>Home</NavLink>
           )}
+          <NavLink to="/calls" className={link}>Calls</NavLink>
           <NavLink to="/profile" className={link}>Profile</NavLink>
         </nav>
         <div className="ml-auto flex items-center gap-3 text-sm">

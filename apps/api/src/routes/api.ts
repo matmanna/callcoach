@@ -23,6 +23,7 @@ import type { Deps } from "../services/context.ts";
 import { acceptInvite, createInvite, listInvites, lookupInvite, resendInvite, revokeInvite } from "../services/invites.ts";
 import { onboardCoordinator, toUserKey } from "../services/orgs.ts";
 import { archiveTeam, changeMemberRole, createTeam, listMembers, removeMember, teamTree, updateTeam } from "../services/teams.ts";
+import { postCallRoutes } from "./postcall.ts";
 
 export type ApiEnv = { Variables: { user: SessionUser | null; access: Access } };
 
@@ -253,5 +254,6 @@ export function apiRoutes(deps: Deps) {
     return c.body(csv);
   });
 
+  api.route("/", postCallRoutes(deps));
   return api;
 }

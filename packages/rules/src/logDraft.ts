@@ -32,6 +32,7 @@ export function draftFromNote(scrubbedNote: string, rules: { logRules: LogRulesF
   const flags: LogFlag[] = [];
   if (cueHit("distress")) flags.push("DISTRESS");
   if (preference === "stop_calls" || cueHit("stop_contact")) flags.push("STOP_CONTACT");
+  for (const rule of rules.logRules.flag ?? []) if (hit(text, rule.triggers) && !flags.includes(rule.label)) flags.push(rule.label);
   if (flags.includes("STOP_CONTACT") && preference === "none") preference = "stop_calls";
 
   const reason =

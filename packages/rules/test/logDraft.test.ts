@@ -31,8 +31,9 @@ describe("draftFromNote", () => {
     expect(draft("Thanked them for the gift.")).toEqual({ outcome: "reached", donor_stated_reason: "Thanked for the gift", preference: "none", follow_up: { needed: false, action: "", due_date: null }, flags: [] });
   });
 
-  it("never emits OFF_SCRIPT_CLAIM from rules", () => {
+  it("only emits OFF_SCRIPT_CLAIM for a configured trigger", () => {
     expect(draft("I told them it is fully tax deductible.").flags).not.toContain("OFF_SCRIPT_CLAIM");
+    expect(draft("I promised a guaranteed outcome.").flags).toContain("OFF_SCRIPT_CLAIM");
   });
 });
 

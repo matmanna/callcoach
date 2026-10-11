@@ -1,4 +1,5 @@
 import type { Db, MongoClient } from "mongodb";
+import type { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
 import type { Auth } from "../auth/auth.ts";
 
 export interface Deps {
@@ -9,6 +10,8 @@ export interface Deps {
   /** Where invite links go when MAIL_MODE=console. Tests capture it. */
   mail: (to: string, subject: string, body: string) => void;
   now?: () => Date;
+  /** Injectable for tests; no client is constructed unless a model is configured. */
+  bedrock?: BedrockRuntimeClient;
 }
 
 export const nowOf = (deps: Pick<Deps, "now">) => (deps.now ? deps.now() : new Date());
