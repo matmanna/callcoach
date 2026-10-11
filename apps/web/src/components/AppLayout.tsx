@@ -14,6 +14,8 @@ export function AppLayout() {
   if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
   if (!me) return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />;
   if ((me.onboarding_required || me.pending_invites.length > 0) && location.pathname !== "/onboarding") return <Navigate to="/onboarding" replace />;
+  // The live call owns the full viewport so navigation does not compete with the caller's cue.
+  if (/^\/call\/[^/]+$/.test(location.pathname)) return <Outlet />;
   const coord = isCoordinator(me);
   return (
     <div className="min-h-screen bg-background">

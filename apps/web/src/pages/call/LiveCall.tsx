@@ -1,7 +1,5 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api, errorMessage } from "@/lib/api";
@@ -12,8 +10,8 @@ import { redactTurnAsync } from "@/lib/localAi/asyncRedactor";
 import { loadNer, runNer } from "@/lib/localAi/ner";
 import { loadSpeechModel, transcribeLocal } from "@/lib/localAi/speech";
 import { TwoVoiceDiarizer, loadStoredVoiceProfile, saveVoiceProfile, voiceProfileFromAudio, type SpeakerDetection } from "@/lib/localAi/speakerDetection";
-import { buildKnownIdentifiers, draftFromNote, redactionCounts } from "@sc/rules";
-import { CueRulesFile, LogRulesFile, PhraseRulesFile, type Donor, type DonorDoc, type RawTurn, type Turn } from "@sc/shared";
+import { buildKnownIdentifiers, draftFromNote, initialCueState, redactionCounts, selectCue, type Cue } from "@sc/rules";
+import { CueRulesFile, LogRulesFile, PhraseRulesFile, type Donor, type DonorDoc, type Fact, type RawTurn, type Turn } from "@sc/shared";
 import cueRaw from "../../../../../data/cue-rules.json";
 import logRaw from "../../../../../data/log-rules.json";
 import phraseRaw from "../../../../../data/phrase-rules.json";
@@ -24,6 +22,15 @@ import { toast } from "sonner";
 const cueRules = CueRulesFile.parse(cueRaw).rules;
 const logRules = LogRulesFile.parse(logRaw);
 const phraseRules = PhraseRulesFile.parse(phraseRaw).rules;
+
+interface LiveBrief {
+  donor: { first_name: string; last_name: string; campaign: string; gift_band: string; past_gift_count: number; last_gift_band: string };
+  limits: string[];
+  fact_items: Array<Fact & { owner: string; stale: boolean }>;
+  talking_points: string[];
+}
+
+interface LiveFlag { label: "DISTRESS" | "STOP_CONTACT" | "OFF_SCRIPT_CLAIM"; reason: string; id: string }
 
 function forRedactor(donor: DonorDoc): Donor {
   return {
@@ -50,6 +57,7 @@ export function LiveCall() {
   const navigate = useNavigate();
   const { me } = useSession();
   const [donor, setDonor] = useState<DonorDoc | null>(null);
+  const [brief, setBrief] = useState<LiveBrief | null>(null);
   const [modelState, setModelState] = useState<ModelState>("idle");
   const [backend, setBackend] = useState("");
   const [listening, setListening] = useState(false);
@@ -63,6 +71,11 @@ export function LiveCall() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [held, setHeld] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [activeCue, setActiveCue] = useState<Cue | null>(null);
+  const [cueHistory, setCueHistory] = useState<Cue[]>([]);
+  const [liveFlags, setLiveFlags] = useState<LiveFlag[]>([]);
+  const [celebrating, setCelebrating] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(false);
   const capture = useRef<LocalAudioCapture | null>(null);
   const calibrationCapture = useRef<LocalAudioCapture | null>(null);
   const referenceSampleReceived = useRef(false);
@@ -71,6 +84,9 @@ export function LiveCall() {
   const autoDetectSpeakerRef = useRef(true);
   const diarizer = useRef<TwoVoiceDiarizer | null>(null);
   const startedAt = useRef(0);
+  const cueState = useRef(initialCueState());
+  const lastCueAt = useRef(-15_000);
+  const autoStarted = useRef(false);
 
   useEffect(() => {
     speakerRef.current = speaker;
@@ -82,8 +98,8 @@ export function LiveCall() {
 
   useEffect(() => {
     if (!donorId) return;
-    void api<{ donor: DonorDoc }>(`/donors/${donorId}`)
-      .then((result) => setDonor(result.donor))
+    void Promise.all([api<{ donor: DonorDoc }>(`/donors/${donorId}`), api<LiveBrief>(`/donors/${donorId}/brief`)])
+      .then(([result, callBrief]) => { setDonor(result.donor); setBrief(callBrief); })
       .catch((err: unknown) => toast.error(errorMessage(err)));
     return () => { void capture.current?.stop(); void calibrationCapture.current?.stop(); };
   }, [donorId]);
@@ -116,6 +132,19 @@ export function LiveCall() {
     }
   };
 
+  const suggestFlags = (turn: Turn, cue: Cue | null, stopContact: boolean) => {
+    const next: LiveFlag[] = [];
+    if (cue?.type === "distress") next.push({ label: "DISTRESS", reason: "Sensitive distress language needs coordinator review.", id: crypto.randomUUID() });
+    if (stopContact) next.push({ label: "STOP_CONTACT", reason: "A stop-contact request needs coordinator review.", id: crypto.randomUUID() });
+    if (turn.speaker === "volunteer") {
+      const lower = turn.scrubbed.toLowerCase();
+      if ((logRules.flag ?? []).some((rule) => rule.triggers.some((trigger) => lower.includes(trigger)))) next.push({ label: "OFF_SCRIPT_CLAIM", reason: "Possible off-script claim; review after the call.", id: crypto.randomUUID() });
+    }
+    if (!next.length) return;
+    setLiveFlags((current) => [...current, ...next].slice(-3));
+    for (const flag of next) window.setTimeout(() => setLiveFlags((current) => current.filter((item) => item.id !== flag.id)), 8_000);
+  };
+
   const startListening = async () => {
     if (!donor || !me || modelState !== "ready") return;
     if (!diarizer.current) {
@@ -144,6 +173,21 @@ export function LiveCall() {
             setHeld((count) => count + 1);
             return;
           }
+          if (result.turn.speaker === "donor" && result.turn.t - lastCueAt.current >= 15_000) {
+            const approvedFacts = brief?.fact_items ?? [];
+            // A fact cue is usable only when that exact approved campaign fact is in this dossier.
+            const usableRules = cueRules.filter((rule) => rule.type !== "fact" || approvedFacts.some((fact) => fact.id === rule.fact_id));
+            const selected = selectCue(result.turn, usableRules, approvedFacts, cueState.current);
+            cueState.current = selected.state;
+            if (selected.cue) {
+              lastCueAt.current = result.turn.t;
+              setActiveCue(selected.cue);
+              setCueHistory((current) => [...current, selected.cue!].slice(-4));
+            }
+            suggestFlags(result.turn, selected.cue, selected.dncCandidate);
+          } else {
+            suggestFlags(result.turn, null, false);
+          }
           turnsRef.current = [...turnsRef.current, result.turn];
           setTurns(turnsRef.current);
         } finally {
@@ -151,6 +195,7 @@ export function LiveCall() {
         }
       }, 3);
       setListening(true);
+      autoStarted.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Microphone access failed.");
     }
@@ -208,64 +253,52 @@ export function LiveCall() {
       });
     }
     diarizer.current = null;
-    navigate(`/call/${donorId}/post?log=${logId}`);
+    setCelebrating(true);
+    window.setTimeout(() => navigate(`/call/${donorId}/post?log=${logId}`), 650);
   };
 
+  useEffect(() => { void prepare(); }, []);
+  useEffect(() => {
+    if (modelState !== "ready" || !donor || !me || listening || autoStarted.current) return;
+    if (!diarizer.current) { setCalibrationOpen(true); return; }
+    void startListening();
+  }, [modelState, donor, me, listening]);
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Call with {donor ? `${donor.first_name} ${donor.last_name}` : "donor"}</h1>
-          <p className="text-sm text-muted-foreground">Local listening and redaction run on this device.</p>
-        </div>
-        <Button variant="outline" onClick={() => void finish()}>End call and review</Button>
+    <div className="min-h-[calc(100vh-3rem)] bg-[#111318] px-4 py-5 text-slate-100 sm:px-7">
+      <header className="mx-auto flex max-w-7xl items-center justify-between">
+        <div><p className="text-xs font-medium tracking-[0.2em] text-slate-400">LIVE CALL</p><h1 className="mt-1 text-lg font-semibold">{brief ? `${brief.donor.first_name} ${brief.donor.last_name}` : "Preparing donor brief"}</h1></div>
+        <div className="flex items-center gap-2 text-xs text-slate-300"><span className={`h-2 w-2 rounded-full ${listening ? "animate-pulse bg-emerald-400" : "bg-slate-500"}`} />{listening ? "Listening locally" : modelState === "loading" ? "Preparing local AI" : "Waiting to start"}</div>
+      </header>
+
+      <div className="mx-auto mt-6 grid max-w-7xl gap-5 lg:grid-cols-[minmax(250px,0.8fr)_minmax(320px,1.2fr)_minmax(250px,0.8fr)]">
+        <aside className="rounded-2xl border border-amber-950/20 bg-[#f0dfaf] p-5 text-stone-800 shadow-xl">
+          <p className="text-xs font-semibold tracking-[0.18em] text-stone-500">CALL DOSSIER</p>
+          <h2 className="mt-3 text-xl font-semibold">{brief?.donor.first_name} {brief?.donor.last_name}</h2>
+          <p className="mt-1 text-sm text-stone-600">{brief?.donor.campaign}</p>
+          <div className="mt-5 space-y-3 text-sm"><p><strong>{brief?.donor.gift_band}</strong> gift band</p><p>{brief?.donor.past_gift_count ?? 0} past gifts · last {brief?.donor.last_gift_band ?? "—"}</p></div>
+          <div className="mt-5 rounded-xl bg-amber-100/90 p-3 text-sm"><p className="font-semibold">Limits</p><p className="mt-1 text-stone-700">{brief?.limits.length ? brief.limits.join(" · ") : "No stated limits"}</p></div>
+          {brief?.talking_points.length ? <div className="mt-5 border-t border-stone-400/30 pt-4"><p className="text-xs font-semibold tracking-wide text-stone-500">APPROVED TALKING POINTS</p>{brief.talking_points.slice(0, 3).map((point, index) => <p key={index} className="mt-2 text-sm leading-relaxed">{point}</p>)}</div> : null}
+        </aside>
+
+        <section className="min-h-[500px] rounded-2xl border border-white/8 bg-[#191c23] p-5 shadow-2xl">
+          <div className="flex items-center justify-between"><p className="text-sm text-slate-400">Private local transcript</p>{processing ? <Badge variant="outline" className="border-slate-600 text-slate-300">processing</Badge> : null}</div>
+          <div className="mt-12 text-center"><div className={`mx-auto flex h-28 w-28 items-center justify-center rounded-full border border-sky-200/20 bg-sky-300/10 ${listening ? "animate-pulse" : ""}`}><span className="h-16 w-16 rounded-full bg-sky-300/30" /></div><p className="mt-5 text-sm text-slate-300">{listening ? "Your microphone is being processed on this device." : "Local audio is ready when the call starts."}</p></div>
+          <div className="mt-10 space-y-3">{turns.slice(-3).map((turn) => <div key={turn.id} className="rounded-xl bg-white/5 p-3 text-sm"><span className="text-xs font-medium uppercase tracking-wide text-slate-400">{turn.speaker}</span><p className="mt-1 leading-relaxed text-slate-200">{turn.scrubbed}</p></div>)}{!turns.length ? <p className="text-center text-sm text-slate-500">Transcript stays on this device and is scrubbed before it appears here.</p> : null}</div>
+          {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}{held ? <p className="mt-4 text-sm text-amber-200">{held} segment(s) held while local redaction completes.</p> : null}
+        </section>
+
+        <aside className="rounded-2xl border border-sky-100/20 bg-gradient-to-br from-sky-100 to-blue-200 p-5 text-slate-900 shadow-xl">
+          <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">CURRENT CUE</p>
+          {activeCue ? <><p className="mt-5 text-lg font-medium leading-relaxed">{activeCue.card_text}</p>{activeCue.source ? <p className="mt-4 text-xs text-slate-600">Source: {activeCue.source} · verified {activeCue.verified_on}</p> : null}</> : <p className="mt-5 text-sm leading-relaxed text-slate-600">I&apos;ll offer one approved cue when a donor turn matches the organization&apos;s rules.</p>}
+          <div className="mt-8 flex gap-2">{cueHistory.length ? cueHistory.map((cue, index) => <button key={`${cue.rule_id}-${index}`} onClick={() => setActiveCue(cue)} aria-label={`Show cue ${index + 1}`} className={`h-2.5 w-2.5 rounded-full ${activeCue?.rule_id === cue.rule_id ? "bg-slate-900" : "bg-slate-400/50"}`} />) : <span className="h-2.5 w-2.5 rounded-full bg-slate-400/50" />}</div>
+          <p className="mt-4 text-xs text-slate-600">One cue per donor turn, with at least 15 seconds between cues.</p>
+        </aside>
       </div>
 
-      <Alert>
-        <AlertTitle>Device-only call processing</AlertTitle>
-        <AlertDescription>Microphone audio and recognized raw text stay in memory on this device. Each segment is redacted locally, then its raw audio and text are discarded. Nothing is sent during the call.</AlertDescription>
-      </Alert>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Local listening AI</CardTitle>
-          <CardDescription>Prepare the bundled Whisper and NER models before listening. Local diarization separates two voices after you calibrate yours.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={() => void prepare()} disabled={modelState === "loading" || listening}>
-              {modelState === "loading" ? "Loading local models…" : modelState === "ready" ? "Local AI ready" : "Prepare local AI"}
-            </Button>
-            {modelState === "ready" ? <Badge variant="secondary">{backend}</Badge> : null}
-            {listening ? <Badge>Listening</Badge> : null}
-            {processing ? <Badge variant="outline">Processing locally</Badge> : null}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm">Current speaker</span>
-            <Select value={speaker} onValueChange={(value) => setSpeaker(value as RawTurn["speaker"])}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="donor">Donor</SelectItem><SelectItem value="volunteer">Volunteer</SelectItem></SelectContent>
-            </Select>
-            {!listening ? <Button onClick={() => void startListening()} disabled={modelState !== "ready" || !donor}>Start listening</Button> : <Button variant="destructive" onClick={() => void stopListening()}>Stop listening</Button>}
-          </div>
-          <div className="rounded-lg border p-3 text-sm space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <strong>Local speaker detection</strong>
-              {speakerProfileReady ? <Badge variant="secondary">Two-voice detection ready</Badge> : <Badge variant="outline">Reference sample needed</Badge>}
-              <Button size="sm" variant="outline" onClick={() => setCalibrationOpen(true)} disabled={listening}>
-                {speakerProfileReady ? "Recalibrate before next call" : "Set up speaker labels"}
-              </Button>
-              <Button size="sm" variant={autoDetectSpeaker ? "secondary" : "outline"} onClick={() => setAutoDetectSpeaker((enabled) => !enabled)} disabled={!speakerProfileReady}>
-                Auto detection: {autoDetectSpeaker ? "on" : "off"}
-              </Button>
-            </div>
-            <p className="text-muted-foreground">The call is checked in roughly 3-second windows. The first clearly different window is labelled as a provisional donor voice; a matching second window confirms it. Labels are suggestions from this microphone only; use Current speaker to override them. Tauri stores the compact reference profile only on this device.</p>
-            {lastDetection?.voiced ? <p className="text-muted-foreground">Latest local label: likely {lastDetection.speaker} ({Math.round(lastDetection.confidence * 100)}% match confidence){lastDetection.learnedOtherVoice ? "; two voices confirmed" : "; checking the second voice"}.</p> : null}
-          </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          {held ? <p className="text-sm text-destructive">{held} segment(s) held because local NER did not complete.</p> : null}
-        </CardContent>
-      </Card>
+      <div className="fixed inset-x-0 bottom-6 z-30 flex justify-center"><div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#242832]/95 px-4 py-3 shadow-2xl backdrop-blur"><Button size="sm" variant="outline" className="border-white/15 bg-transparent text-slate-100 hover:bg-white/10 hover:text-white" onClick={() => setControlsOpen(true)}>Controls</Button>{listening ? <Button size="sm" variant="outline" className="border-white/15 bg-transparent text-slate-100 hover:bg-white/10 hover:text-white" onClick={() => void stopListening()}>Pause</Button> : <Button size="sm" variant="outline" className="border-white/15 bg-transparent text-slate-100 hover:bg-white/10 hover:text-white" onClick={() => void startListening()} disabled={modelState !== "ready"}>Resume</Button>}<Button size="sm" variant="destructive" onClick={() => void finish()} disabled={celebrating}>{celebrating ? "Call complete" : "Hang up & review"}</Button></div></div>
+      <div className="fixed bottom-24 right-5 z-40 flex w-72 flex-col gap-2">{liveFlags.map((flag) => <div key={flag.id} className="animate-in slide-in-from-bottom-5 fade-in rounded-xl border border-amber-300/40 bg-[#2d2418] p-3 text-sm text-amber-50 shadow-xl"><p className="font-semibold">Review suggested: {flag.label}</p><p className="mt-1 text-amber-100/80">{flag.reason}</p></div>)}</div>
+      {celebrating ? <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">{Array.from({ length: 24 }, (_, index) => <span key={index} className="absolute top-1/3 h-2 w-2 animate-ping rounded-full bg-sky-300" style={{ left: `${(index * 17) % 100}%`, animationDelay: `${index * 35}ms` }} />)}</div> : null}
 
       <Dialog open={calibrationOpen} onOpenChange={(open) => { if (calibrationState !== "recording") setCalibrationOpen(open); }}>
         <DialogContent showCloseButton={calibrationState !== "recording"}>
@@ -286,14 +319,12 @@ export function LiveCall() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Card>
-        <CardHeader><CardTitle>Locally redacted transcript</CardTitle><CardDescription>Only scrubbed segments are retained for the post-call draft.</CardDescription></CardHeader>
-        <CardContent className="space-y-3">
-          {turns.map((turn) => <div key={turn.id} className="rounded-lg border p-3 text-sm"><Badge variant="outline">{turn.speaker}</Badge><p className="mt-2">{turn.scrubbed}</p></div>)}
-          {!turns.length ? <p className="text-sm text-muted-foreground">No processed segments yet.</p> : null}
-        </CardContent>
-      </Card>
+      <Dialog open={controlsOpen} onOpenChange={setControlsOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Call controls</DialogTitle><DialogDescription>These controls affect only this local call session.</DialogDescription></DialogHeader>
+          <div className="space-y-4"><label className="block text-sm font-medium">Fallback speaker</label><Select value={speaker} onValueChange={(value) => setSpeaker(value as RawTurn["speaker"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="donor">Donor</SelectItem><SelectItem value="volunteer">Volunteer</SelectItem></SelectContent></Select><div className="flex items-center justify-between gap-3"><span className="text-sm">Automatic two-voice labels</span><Button size="sm" variant={autoDetectSpeaker ? "secondary" : "outline"} onClick={() => setAutoDetectSpeaker((enabled) => !enabled)} disabled={!speakerProfileReady}>{autoDetectSpeaker ? "On" : "Off"}</Button></div><Button variant="outline" onClick={() => { setControlsOpen(false); setCalibrationOpen(true); }} disabled={listening}>Recalibrate voice</Button><p className="text-xs text-muted-foreground">{lastDetection?.voiced ? `Latest local label: ${lastDetection.speaker}${lastDetection.learnedOtherVoice ? "; two voices confirmed." : "; checking second voice."}` : "No voiced segment detected yet."}</p></div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
