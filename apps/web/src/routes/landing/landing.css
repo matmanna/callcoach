@@ -1,7 +1,7 @@
 /*
- * Landing page tokens and motion (Prompt L1). Everything is scoped to `.landing`, so the
- * signed-in app keeps its own theme. shadcn variables are re-pointed at the palette here,
- * which is how Button, Accordion, Input, and Sheet pick up the colors.
+ * Landing page tokens and motion (Prompt L1). The `--lp-*` palette is scoped to `.landing`.
+ * shadcn tokens (Button, Accordion, Input, Sheet, ...) come from `:root` in index.css, the
+ * platform theme, which uses the same palette.
  *
  * Light mode only. Nothing "appears" on scroll: content is static, and the only ambient
  * motion is the light beams travelling along flowchart edges. Everything moving is
@@ -50,26 +50,7 @@
   --lp-shadow-lift: 0 2px 4px rgb(38 49 58 / 0.05), 0 20px 40px -20px rgb(38 49 58 / 0.24);
   --lp-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 
-  /* shadcn variables, re-pointed */
-  --background: var(--lp-bg);
-  --foreground: var(--lp-ink);
-  --card: var(--lp-surface);
-  --card-foreground: var(--lp-ink);
-  --popover: var(--lp-surface);
-  --popover-foreground: var(--lp-ink);
-  --primary: var(--lp-ink);
-  --primary-foreground: var(--lp-bg);
-  --secondary: var(--lp-sage-soft);
-  --secondary-foreground: var(--lp-sage-ink);
-  --muted: #f2f0ec;
-  --muted-foreground: var(--lp-ink-soft);
-  --accent: var(--lp-sage-soft);
-  --accent-foreground: var(--lp-ink);
-  --border: var(--lp-line);
-  --input: rgb(38 49 58 / 0.14);
-  --ring: #6f9a7c;
-  --destructive: #a23b2a;
-  --radius: 0.875rem;
+  /* shadcn tokens come from :root in index.css (the platform theme). */
 
   font-family: "Figtree Variable", "Figtree Fallback", ui-sans-serif, system-ui, sans-serif;
   background: var(--lp-bg);
