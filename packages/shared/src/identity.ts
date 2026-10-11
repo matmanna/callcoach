@@ -55,6 +55,8 @@ export const OrganizationDoc = z.object({
   staff_size_band: StaffSizeBand.nullable().optional(),
   mission: z.string().max(300).nullable().optional(),
   country: z.string().max(80).nullable().optional(),
+  /** Set once sample data has been seeded (or deliberately skipped). Prevents re-seeding. */
+  sample_seeded_at: z.date().nullable().optional(),
 });
 export type OrganizationDoc = z.infer<typeof OrganizationDoc>;
 

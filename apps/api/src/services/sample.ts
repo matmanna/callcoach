@@ -38,7 +38,12 @@ export interface SampleResult {
   rubric: boolean;
 }
 
-/** Idempotent: an organization that already has donors is left alone. `force` ignores the env flag (dev seed). */
+/**
+ * Idempotent and race-safe: the organization is claimed with an atomic `sample_seeded_at` marker,
+ * so concurrent calls seed once. An organization that already has donors is left alone (marked,
+ * not seeded). `force` ignores the env flag and the marker (dev seed). If seeding fails the
+ * claim is released so a later call can retry.
+ */
 export async function seedSampleData(deps: Deps, user: SampleUser, opts: { force?: boolean } = {}): Promise<SampleResult> {
   const empty: SampleResult = { teams: 0, donors: 0, gifts: 0, facts_approved: 0, rubric: false };
   if (!opts.force && !sampleSeedEnabled(deps.env)) return { ...empty, skipped: "disabled" };
@@ -47,9 +52,27 @@ export async function seedSampleData(deps: Deps, user: SampleUser, opts: { force
   let access = await loadAccess(deps.db, user);
   const orgId = access.orgId;
   if (!orgId) throw new Error("organization not created yet");
+
+  if (!opts.force) {
+    const claimed = await c.organizations.findOneAndUpdate({ _id: orgId, sample_seeded_at: { $in: [null, undefined] } }, { $set: { sample_seeded_at: new Date() } });
+    if (!claimed) return { ...empty, skipped: "already_seeded" };
+  } else {
+    await c.organizations.updateOne({ _id: orgId }, { $set: { sample_seeded_at: new Date() } });
+  }
   if (await c.donors.countDocuments({ org_id: orgId }, { limit: 1 })) return { ...empty, skipped: "already_seeded" };
 
-  const result = { ...empty };
+  try {
+    return await run(deps, user, access, orgId);
+  } catch (err) {
+    if (!opts.force) await c.organizations.updateOne({ _id: orgId }, { $unset: { sample_seeded_at: "" } });
+    throw err;
+  }
+}
+
+async function run(deps: Deps, user: SampleUser, access0: Awaited<ReturnType<typeof loadAccess>>, orgId: string): Promise<SampleResult> {
+  const c = collections(deps.db);
+  let access = access0;
+  const result: SampleResult = { teams: 0, donors: 0, gifts: 0, facts_approved: 0, rubric: false };
   for (const t of SAMPLE_TEAMS) {
     if (!(await c.teams.findOne({ org_id: orgId, name: t.name }))) {
       await createTeam(deps, access, orgId, { ...t, parent_team_id: null });
@@ -84,11 +107,17 @@ export async function seedSampleData(deps: Deps, user: SampleUser, opts: { force
   return result;
 }
 
-/** Called from onboarding. Swallows errors so a seeding problem never blocks sign-up. */
-export async function seedSampleDataSafely(deps: Deps, user: SampleUser): Promise<void> {
+/**
+ * Called from onboarding and from /me (so coordinators whose organization predates automatic
+ * seeding get sample data the first time they sign in). Swallows errors so seeding never blocks
+ * the user. Returns true when it seeded something.
+ */
+export async function seedSampleDataSafely(deps: Deps, user: SampleUser): Promise<boolean> {
   try {
-    await seedSampleData(deps, user);
+    const r = await seedSampleData(deps, user);
+    return !r.skipped;
   } catch (err) {
     console.error("[sample] seeding failed:", err instanceof Error ? err.name : "error");
+    return false;
   }
 }
