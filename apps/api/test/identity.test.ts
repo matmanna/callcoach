@@ -179,6 +179,23 @@ describe("invites", () => {
   });
 });
 
+describe("invite link in response (production, no email service)", () => {
+  it("returns the link to the coordinator only when INVITE_LINK_IN_RESPONSE=1", async () => {
+    const off = await coord.post(`/api/teams/${teamB}/invites`, { email: "nolink@example.org", role: "caller" });
+    expect(off.json.link).toBeUndefined();
+    h.deps.env.INVITE_LINK_IN_RESPONSE = "1";
+    try {
+      const on = await coord.post(`/api/teams/${teamB}/invites`, { email: "withlink@example.org", role: "caller" });
+      expect(on.json.link).toMatch(/\/invite\/[A-Za-z0-9_-]{20,}$/);
+      const resent = await coord.post(`/api/invites/${on.json.invite._id}/resend`);
+      expect(resent.json.link).toMatch(/\/invite\//);
+      expect(resent.json.link).not.toBe(on.json.link);
+    } finally {
+      delete h.deps.env.INVITE_LINK_IN_RESPONSE;
+    }
+  });
+});
+
 describe("members", () => {
   it("removing a member sets status removed and writes an audit row", async () => {
     const { client: v } = await inviteAndAccept(h, coord, teamB, "remove-me@example.org");

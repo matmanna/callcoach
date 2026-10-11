@@ -10,7 +10,7 @@ import { AuthCard } from "./AuthCard.tsx";
 export function SignIn() {
   const { refresh } = useSession();
   const navigate = useNavigate();
-  const from = (useLocation().state as { from?: string } | null)?.from ?? "/";
+  const from = (useLocation().state as { from?: string } | null)?.from ?? "/app";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

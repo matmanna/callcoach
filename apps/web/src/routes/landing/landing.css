@@ -1,0 +1,397 @@
+/*
+ * Landing page tokens and motion (Prompt L1). The `--lp-*` palette is scoped to `.landing`.
+ * shadcn tokens (Button, Accordion, Input, Sheet, ...) come from `:root` in index.css, the
+ * platform theme, which uses the same palette.
+ *
+ * Light mode only. Nothing "appears" on scroll: content is static, and the only ambient
+ * motion is the light beams travelling along flowchart edges. Everything moving is
+ * switched off under prefers-reduced-motion (bottom of file).
+ */
+@import "@fontsource-variable/figtree";
+
+/* Size-matched fallback so the swap to Figtree doesn't shift the layout. Measured against Arial
+   (Liberation Sans is metric-compatible on Linux): Figtree is 100.6% as wide, ascent 95, descent 25. */
+@font-face {
+  font-family: "Figtree Fallback";
+  src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("Helvetica");
+  size-adjust: 100.6%;
+  ascent-override: 94.4%;
+  descent-override: 24.9%;
+  line-gap-override: 0%;
+}
+
+.landing {
+  color-scheme: light;
+
+  /* Neutral warm base; sage is the one accent. The other pastels are quiet tints only.
+     Each tint has an "ink" for text on it (all pass WCAG AA). */
+  --lp-bg: #faf9f7;
+  --lp-surface: #ffffff;
+  --lp-ink: #26313a;
+  --lp-ink-soft: #5a6570;
+  --lp-line: rgb(38 49 58 / 0.08);
+  --lp-hairline: rgb(38 49 58 / 0.07);
+  --lp-sage: #9fbfa9;
+  --lp-sage-soft: #ebf3ed;
+  --lp-sage-ink: #3a5c46;
+  --lp-blush: #e6c5bb;
+  --lp-blush-soft: #fbefeb;
+  --lp-blush-ink: #7a4a3e;
+  --lp-butter: #eedfb3;
+  --lp-butter-soft: #fbf6e8;
+  --lp-butter-ink: #6b5a24;
+  --lp-sky: #c3d9e6;
+  --lp-sky-soft: #eef5f9;
+  --lp-sky-ink: #345266;
+  --lp-edge: rgb(38 49 58 / 0.12);
+  --lp-beam: #5f9370;
+  --lp-placeholder: #6e767b;
+  --lp-shadow: 0 1px 2px rgb(38 49 58 / 0.04), 0 8px 24px -14px rgb(38 49 58 / 0.14);
+  --lp-shadow-lift: 0 2px 4px rgb(38 49 58 / 0.05), 0 20px 40px -20px rgb(38 49 58 / 0.24);
+  --lp-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* shadcn tokens come from :root in index.css (the platform theme). */
+
+  font-family: "Figtree Variable", "Figtree Fallback", ui-sans-serif, system-ui, sans-serif;
+  background: var(--lp-bg);
+  color: var(--lp-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.landing h1,
+.landing h2,
+.landing h3 {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.landing p {
+  text-wrap: pretty;
+}
+
+/* Short mono eyebrow labels, the only all-caps text on the page. */
+.lp-eyebrow {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+}
+
+.landing a:focus-visible,
+.landing button:focus-visible,
+.landing [tabindex]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* ---------- Backgrounds ---------- */
+
+/* One soft sage/sky light in the hero, fading to nothing. Static. */
+.lp-wash {
+  pointer-events: none;
+  background:
+    radial-gradient(50% 60% at 18% 0%, rgb(235 243 237 / 0.9), transparent 70%),
+    radial-gradient(40% 50% at 92% 8%, rgb(238 245 249 / 0.9), transparent 70%);
+}
+
+/* Fine dot grid fading toward the edges (a transparency gradient via mask). */
+.lp-dots {
+  pointer-events: none;
+  background-image: radial-gradient(rgb(38 49 58 / 0.1) 1px, transparent 1.2px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 65% 55% at 50% 20%, black, transparent 75%);
+}
+
+/* Section tints that fade in and out instead of starting with a hard edge. */
+.lp-band {
+  background: linear-gradient(to bottom, transparent, var(--band) 12%, var(--band) 88%, transparent);
+}
+
+/* Soft highlighter behind one phrase in the headline. Static. */
+.lp-mark {
+  background-image: linear-gradient(transparent 60%, rgb(159 191 169 / 0.42) 60%, rgb(159 191 169 / 0.42) 90%, transparent 90%);
+  padding: 0 0.04em;
+}
+
+/* ---------- Hover and press ---------- */
+
+/* Lift on hover and keyboard focus: cards, tiles, logos. */
+.lp-lift {
+  transition:
+    transform 350ms var(--lp-ease),
+    box-shadow 350ms var(--lp-ease),
+    background-color 350ms var(--lp-ease),
+    border-color 350ms var(--lp-ease),
+    color 350ms var(--lp-ease),
+    filter 350ms var(--lp-ease);
+}
+.lp-lift:hover,
+.lp-lift:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: var(--lp-shadow-lift);
+}
+
+/* Press feedback for anything clickable. */
+.lp-press {
+  transition: transform 160ms var(--lp-ease);
+}
+.lp-press:active {
+  transform: scale(0.985);
+}
+
+/* Spotlight: a soft glow following the pointer (--mx/--my from JS); --spot picks the tint. */
+.lp-spot {
+  position: relative;
+  isolation: isolate;
+  --spot: var(--lp-sage);
+}
+.lp-spot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 30%), color-mix(in oklab, var(--spot) 30%, transparent), transparent 65%);
+  transition: opacity 450ms var(--lp-ease);
+}
+.lp-spot:hover::before,
+.lp-spot:focus-visible::before {
+  opacity: 1;
+}
+
+/* 1px gradient border that lights up near the pointer. */
+.lp-rim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 30%), color-mix(in oklab, var(--spot, var(--lp-sage)) 90%, black 10%), transparent 70%);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  transition: opacity 450ms var(--lp-ease);
+}
+.lp-rim:hover::after,
+.lp-rim:focus-visible::after {
+  opacity: 1;
+}
+
+/* Click ripple from the pointer position. Lives in a child span so it never fights ::before/::after. */
+.lp-ripple {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.lp-ripple > span {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0;
+  animation: lp-ripple 650ms var(--lp-ease);
+}
+@keyframes lp-ripple {
+  from {
+    opacity: 0.16;
+    transform: scale(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(40);
+  }
+}
+
+/* Icon tiles tilt a little when their card is hovered. */
+.lp-icon {
+  transition:
+    transform 450ms var(--lp-ease),
+    background-color 450ms var(--lp-ease);
+}
+.group:hover .lp-icon,
+.group:focus-visible .lp-icon {
+  transform: rotate(-6deg) scale(1.08);
+}
+
+/* Arrow that slides in on hover. */
+.lp-arrow {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 300ms var(--lp-ease),
+    transform 300ms var(--lp-ease);
+}
+.group:hover .lp-arrow,
+.group:focus-visible .lp-arrow {
+  opacity: 1;
+  transform: none;
+}
+
+/* Arrow inside a button nudges along on hover. */
+.lp-nudge {
+  transition: transform 300ms var(--lp-ease);
+}
+a:hover .lp-nudge,
+button:hover .lp-nudge {
+  transform: translateY(2px);
+}
+
+/* Nav links: an underline grows from the left. */
+.lp-navlink {
+  background: linear-gradient(currentColor 0 0) left bottom / 0% 1px no-repeat;
+  transition:
+    background-size 350ms var(--lp-ease),
+    color 300ms var(--lp-ease);
+}
+.lp-navlink:hover,
+.lp-navlink:focus-visible {
+  background-size: 100% 1px;
+}
+
+/* ---------- Animated edges ---------- */
+
+/*
+ * A flowchart edge: a solid hairline with a soft light beam gliding along it, on a loop.
+ * --bd staggers the beams so they read as one flow from step to step.
+ */
+.lp-edge {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--lp-edge);
+}
+.lp-edge > i {
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, var(--lp-beam), transparent);
+  transform: translateX(-100%);
+  animation: lp-beam-x 2.4s cubic-bezier(0.45, 0, 0.35, 1) var(--bd, 0s) infinite;
+}
+.lp-edge-y > i {
+  width: auto;
+  height: 45%;
+  background: linear-gradient(180deg, transparent, var(--lp-beam), transparent);
+  transform: translateY(-100%);
+  animation-name: lp-beam-y;
+}
+@keyframes lp-beam-x {
+  0% {
+    transform: translateX(-100%);
+  }
+  70%,
+  100% {
+    transform: translateX(225%);
+  }
+}
+@keyframes lp-beam-y {
+  0% {
+    transform: translateY(-100%);
+  }
+  70%,
+  100% {
+    transform: translateY(225%);
+  }
+}
+
+/* Small ports where an edge meets a node, like a diagramming tool. */
+.lp-port {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--lp-surface);
+  box-shadow:
+    0 0 0 1.5px var(--lp-edge),
+    0 1px 2px rgb(38 49 58 / 0.08);
+}
+
+/* Curved SVG edges (illustrations): the beam is a short gradient stroke segment. */
+.lp-svg-beam {
+  stroke-dasharray: 18 82;
+  animation: lp-svg-beam 2.6s cubic-bezier(0.45, 0, 0.35, 1) var(--bd, 0s) infinite;
+}
+@keyframes lp-svg-beam {
+  from {
+    stroke-dashoffset: 18;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+/* Auto-advance progress bar inside the active step; animationend moves to the next step. */
+.lp-progress {
+  transform-origin: left;
+  animation: lp-progress var(--dur, 7s) linear forwards;
+}
+.lp-progress[data-paused="true"] {
+  animation-play-state: paused;
+}
+@keyframes lp-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ---------- Logo wall ---------- */
+
+.lp-logo {
+  color: var(--lp-placeholder);
+  filter: grayscale(1);
+}
+.lp-logo:hover,
+.lp-logo:focus-visible {
+  color: var(--lp-ink);
+  filter: none;
+}
+
+/* ---------- Header ---------- */
+
+.lp-header {
+  transition:
+    background-color 400ms var(--lp-ease),
+    box-shadow 400ms var(--lp-ease);
+}
+.lp-header[data-solid="true"] {
+  background-color: rgb(250 249 247 / 0.85);
+  backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow: 0 1px 0 var(--lp-line);
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-lift:hover,
+  .lp-lift:focus-visible,
+  .lp-press:active,
+  .group:hover .lp-icon,
+  .group:focus-visible .lp-icon,
+  a:hover .lp-nudge,
+  button:hover .lp-nudge {
+    transform: none;
+  }
+  .lp-arrow {
+    transform: none;
+  }
+  .lp-edge > i,
+  .lp-svg-beam,
+  .lp-ripple > span {
+    animation: none;
+    opacity: 0;
+  }
+}

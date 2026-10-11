@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import type { z } from "zod";
 import { HttpError } from "./http.ts";
 import { apiRoutes } from "./routes/api.ts";
+import { contactRoutes } from "./routes/contact.ts";
 import type { Deps } from "./services/context.ts";
 
 /** Error body lists field paths and issue codes only, never submitted values. */
@@ -23,6 +24,8 @@ export function createApp(deps: Deps) {
 
   // Better Auth owns /api/auth/* (sign-up, sign-in, sign-out, session, change-password).
   app.on(["GET", "POST"], "/api/auth/*", (c) => deps.auth.handler(c.req.raw));
+  // Public landing-page contact stub; registered before /api so the session middleware never sees it.
+  app.route("/api/contact", contactRoutes());
   app.route("/api", apiRoutes(deps));
 
   // Stub. Core owner implements in routes/approve.ts.

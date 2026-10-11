@@ -132,9 +132,10 @@ export function apiRoutes(deps: Deps) {
     const access = c.get("access");
     const orgId = requireCoordinator(access);
     const body = parseBody(CreateInvite, await jsonBody(c));
-    const { invite } = await createInvite(deps, access, orgId, c.req.param("id"), body);
+    const { invite, token } = await createInvite(deps, access, orgId, c.req.param("id"), body);
     const { token_hash: _h, ...safe } = invite;
-    return c.json({ invite: safe }, 201);
+    // No email service in the hackathon: when enabled, the coordinator gets the link to copy.
+    return c.json({ invite: safe, ...(deps.env.INVITE_LINK_IN_RESPONSE === "1" ? { link: `${deps.env.APP_ORIGIN ?? "http://localhost:5173"}/invite/${token}` } : {}) }, 201);
   });
 
   api.get("/invites", async (c) => {
@@ -144,8 +145,8 @@ export function apiRoutes(deps: Deps) {
 
   api.post("/invites/:id/resend", async (c) => {
     const access = c.get("access");
-    await resendInvite(deps, access, requireCoordinator(access), c.req.param("id"));
-    return c.json({ ok: true });
+    const { token } = await resendInvite(deps, access, requireCoordinator(access), c.req.param("id"));
+    return c.json({ ok: true, ...(deps.env.INVITE_LINK_IN_RESPONSE === "1" ? { link: `${deps.env.APP_ORIGIN ?? "http://localhost:5173"}/invite/${token}` } : {}) });
   });
 
   api.post("/invites/:id/revoke", async (c) => {
