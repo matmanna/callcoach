@@ -2,7 +2,8 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Stewardship Copilot. S3 + CloudFront for the web app, Lambda (Function URL) for the API behind /api/*.
 
-# Region: us-east-1 (CloudFront certificates must be created there).
+# Region: us-east-2 (the project's assigned Region; Lambda and S3 must live there). The CloudFront certificate
+# is created separately in us-east-1, which CloudFront requires, and passed in as CertificateArn.
 # One secret holds the runtime secrets as JSON: { "MONGODB_URI", "BETTER_AUTH_SECRET", "ORIGIN_VERIFY" }.
 # Create it with infra/secrets.sh. Values are never in git.
 

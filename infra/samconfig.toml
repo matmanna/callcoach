@@ -1,12 +1,36 @@
 version = 0.1
 
-[default.global.parameters]
-stack_name = "callcoach"
-region = "us-east-1"
+# Two environments, one stack each. Use:  sam deploy --config-env prod|preview
+# Both run in us-east-2 (the project's assigned Region). The certificate lives in us-east-1 (CloudFront rule).
 
-[default.deploy.parameters]
+[prod.global.parameters]
+stack_name = "callcoach"
+region = "us-east-2"
+
+[prod.deploy.parameters]
 template_file = "template.yaml"
 capabilities = "CAPABILITY_IAM"
 resolve_s3 = true
-confirm_changeset = true
+confirm_changeset = false
 fail_on_empty_changeset = false
+parameter_overrides = [
+  "DomainName=callcoach.matmanna.dev",
+  "SecretName=callcoach/prod",
+  "CertificateArn=arn:aws:acm:us-east-1:888195519464:certificate/4beeb763-be2c-43d5-b1b2-842a8564386b",
+]
+
+[preview.global.parameters]
+stack_name = "callcoach-preview"
+region = "us-east-2"
+
+[preview.deploy.parameters]
+template_file = "template.yaml"
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true
+confirm_changeset = false
+fail_on_empty_changeset = false
+parameter_overrides = [
+  "DomainName=preview.callcoach.matmanna.dev",
+  "SecretName=callcoach/preview",
+  "CertificateArn=arn:aws:acm:us-east-1:888195519464:certificate/4beeb763-be2c-43d5-b1b2-842a8564386b",
+]

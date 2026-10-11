@@ -1,6 +1,8 @@
 # Deploying Stewardship Copilot (AWS + Atlas)
 
-Production URL: `https://callcoach.matmanna.dev` (DNS on Cloudflare). Region: `us-east-1`.
+Production URL: `https://callcoach.matmanna.dev` (DNS on Cloudflare). Region: `us-east-2` (the project's assigned Region; the CloudFront certificate lives in `us-east-1`).
+
+Preview URL: `https://preview.callcoach.matmanna.dev`, stack `callcoach-preview`, secret `callcoach/preview`. Deploy it with `pnpm infra:deploy preview` and `STACK=callcoach-preview pnpm deploy:web`.
 
 ```
 browser ──> CloudFront ──┬─ default: S3 (private, OAC) ─ the Vite build, SPA rewrite
@@ -27,12 +29,15 @@ browser ──> CloudFront ──┬─ default: S3 (private, OAC) ─ the Vite 
 ```
 export AWS_PROFILE=callcoach
 pnpm test && pnpm typecheck
-pnpm infra:deploy \
-  --parameter-overrides CertificateArn=<arn> BedrockModelId=<model id>   # builds the Lambda bundle, shows a change set
-pnpm deploy:web                                                       # builds the web app, syncs to S3, invalidates index.html
+pnpm infra:deploy prod       # or "preview"; builds the Lambda bundle, deploys the stack
+pnpm deploy:web              # STACK=callcoach-preview for preview; syncs S3, invalidates index.html
 ```
 
+Stack parameters (domain, cert, secret) live in `infra/samconfig.toml` per environment.
+
 `pnpm infra:build` only bundles the Lambda (`infra/build/api/index.mjs`); `pnpm infra:validate` lints the template.
+
+`pnpm deploy:web` also records a GitHub Deployment (`infra/gh-deploy.sh`, via `gh` auth) and a `deploy/<env>` commit status, so PRs show the deploy and the repo page shows the Deployments section. Skipped silently when `gh` is not authenticated. CI checks (`pnpm test`, `pnpm typecheck`) run in GitHub Actions (`.github/workflows/ci.yaml`). Actions cannot deploy to AWS: the org SCP denies `iam:CreateOpenIDConnectProvider`, so there is no OIDC role to assume; deploys run from a maintainer's machine.
 
 ## Rollback
 
@@ -42,7 +47,7 @@ pnpm deploy:web                                                       # builds t
 
 ## Teardown
 
-`sam delete --stack-name callcoach --region us-east-1` (empty the S3 bucket first), then delete the Cloudflare records, the ACM certificate, the secret, and the Atlas cluster.
+`sam delete --stack-name callcoach --region us-east-2` (empty the S3 bucket first), then the same for `callcoach-preview`. Then delete the Cloudflare records, the ACM certificate, the secrets, and the Atlas cluster.
 
 ## Known limits
 

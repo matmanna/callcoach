@@ -13,8 +13,8 @@
     "db:seed": "pnpm --filter @sc/api db:seed",
     "db:init": "pnpm --filter @sc/api db:init",
     "infra:build": "node infra/build-api.mjs",
-    "infra:validate": "sam validate --lint --template-file infra/template.yaml",
-    "infra:deploy": "pnpm infra:build && sam deploy --config-file infra/samconfig.toml --template-file infra/template.yaml",
+    "infra:validate": "cd infra && sam validate --lint",
+    "infra:deploy": "pnpm infra:build && cd infra && sam deploy --config-env",
     "deploy:web": "infra/deploy-web.sh"
   },
   "devDependencies": {
