@@ -31,10 +31,6 @@ export function Hero({ sentinel }: { sentinel: Ref<HTMLDivElement> }) {
       <div aria-hidden="true" className="lp-wash absolute inset-x-0 -top-16 h-[44rem]" />
       <div aria-hidden="true" className="lp-dots absolute inset-x-0 -top-16 h-[40rem]" />
       <Container className="relative pt-14 pb-12 sm:pt-24 sm:pb-16">
-        <p className="lp-eyebrow inline-flex items-center gap-2 rounded-full border border-(--lp-hairline) bg-white/70 px-3 py-1.5">
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-(--lp-sage)" />
-          {hero.eyebrow}
-        </p>
         <h1 id="hero-title" className="mt-5 max-w-4xl text-[2.5rem] leading-[1.08] sm:text-6xl lg:text-[4.25rem]">
           <Headline />
         </h1>

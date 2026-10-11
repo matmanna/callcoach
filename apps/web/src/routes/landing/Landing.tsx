@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Testimonials, type Testimonial } from "./components/Testimonials.tsx";
-import { brand, hero } from "./copy.ts";
+import { brand } from "./copy.ts";
 import "./landing.css";
 import { Contact } from "./sections/Contact.tsx";
 import { Examples } from "./sections/Examples.tsx";
@@ -22,7 +22,7 @@ export function Landing() {
   const [solid, setSolid] = useState(false);
 
   useEffect(() => {
-    document.title = `${brand.name}: ${hero.eyebrow.toLowerCase()}`;
+    document.title = brand.name;
     // Smooth in-page scrolling, offset for the sticky header; skipped under reduced motion.
     const html = document.documentElement;
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
