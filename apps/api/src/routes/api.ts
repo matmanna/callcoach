@@ -22,7 +22,7 @@ import { ImportRequest, commitImport, previewImport } from "../imports/importer.
 import type { Deps } from "../services/context.ts";
 import { acceptInvite, acceptPendingInvite, createInvite, listInvites, listPendingInvitesForEmail, lookupInvite, resendInvite, revokeInvite } from "../services/invites.ts";
 import { onboardCoordinator, toUserKey } from "../services/orgs.ts";
-import { seedSampleDataSafely } from "../services/sample.ts";
+import { sampleSeedEnabled, seedSampleDataSafely } from "../services/sample.ts";
 import { dashboardRoutes } from "./dashboard.ts";
 import { callerVisibleItems, listSheets as listSheetViews, staleDays, loadSheet as loadSheetV, approveVersion as approveFactVersion } from "../services/dashboard/facts.ts";
 import { nowOf } from "../services/context.ts";
@@ -59,7 +59,11 @@ export function apiRoutes(deps: Deps) {
 
   // ---------- me / onboarding ----------
   api.get("/me", async (c) => {
-    const access = c.get("access");
+    let access = c.get("access");
+    // Coordinators of organizations created before automatic seeding get sample data once, on first sign-in.
+    if (access.orgId && access.user.user_type === "coordinator" && sampleSeedEnabled(deps.env) && (await seedSampleDataSafely(deps, access.user))) {
+      access = await loadAccess(deps.db, access.user);
+    }
     const org = access.orgId ? await collections(deps.db).organizations.findOne({ _id: access.orgId }) : null;
     return c.json({
       user: access.user,

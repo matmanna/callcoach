@@ -48,6 +48,8 @@ export const OrganizationDoc = z.object({
   slug: z.string().regex(/^[a-z0-9-]+$/),
   created_by: id,
   created_at: z.date(),
+  /** Set once sample data has been seeded (or deliberately skipped). Prevents re-seeding. */
+  sample_seeded_at: z.date().nullable().optional(),
 });
 export type OrganizationDoc = z.infer<typeof OrganizationDoc>;
 
