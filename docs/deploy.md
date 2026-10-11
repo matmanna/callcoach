@@ -22,7 +22,7 @@ browser ──> CloudFront ──┬─ default: S3 (private, OAC) ─ the Vite 
 4. **Secret.** Create `callcoach/prod` in Secrets Manager.
 5. **Certificate.** Request an ACM certificate for the domain in `us-east-1` (DNS validation). Add the validation CNAME in Cloudflare (DNS only). Wait for `ISSUED`.
 6. **Deploy the stack**, then add the Cloudflare CNAME `callcoach` -> the `DistributionDomain` output (DNS only, not proxied).
-7. **Initialise the database once:** `MONGODB_URI=<prod uri> pnpm db:init`. Do not run `db:seed` or `db:seed:demo` in production. Create the first coordinator through the sign-up page.
+7. **Initialise the database once:** `MONGODB_URI=<prod uri> pnpm db:init`. Do not run `db:seed` or `db:seed:demo` in production: every new coordinator's organization is seeded automatically with synthetic sample data (`AUTO_SEED_SAMPLE_DATA=1`, parameter `AutoSeedSampleData`; set it to `0` to turn this off).
 
 ## Bedrock
 
