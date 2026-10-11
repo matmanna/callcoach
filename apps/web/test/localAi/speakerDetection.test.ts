@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { detectSpeaker, mergeVoiceProfiles, smoothSpeakerLabel, voiceDistance, voiceProfileFromAudio } from "../../src/lib/localAi/speakerDetection.ts";
+import { afterEach, beforeEach } from "vitest";
+import { TwoVoiceDiarizer, clearStoredVoiceProfile, detectSpeaker, loadStoredVoiceProfile, mergeVoiceProfiles, saveVoiceProfile, smoothSpeakerLabel, voiceDistance, voiceProfileFromAudio } from "../../src/lib/localAi/speakerDetection.ts";
 
 /** A voice-like tone: harmonics of f0 with a falling spectral tilt. `brightness` > 1 adds upper harmonics. */
 function voice(f0: number, { amplitude = 0.12, seconds = 1.5, brightness = 1 } = {}): Float32Array {
@@ -68,5 +69,56 @@ describe("calibration", () => {
     expect(merged.pitchHz).toBeLessThan(190);
     expect(merged.bands.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 6);
     expect(mergeVoiceProfiles([])).toBeNull();
+  });
+});
+
+describe("two-voice diarization for a call", () => {
+  it("learns the donor voice from a second, consistent voice and labels both afterwards", () => {
+    const volunteer = voiceProfileFromAudio(voice(180))!;
+    const diarizer = new TwoVoiceDiarizer(volunteer);
+    expect(diarizer.detect(voice(182))).toMatchObject({ speaker: "volunteer", learnedOtherVoice: false });
+    expect(diarizer.detect(voice(260))).toMatchObject({ learnedOtherVoice: false });
+    expect(diarizer.detect(voice(262))).toMatchObject({ speaker: "donor", learnedOtherVoice: true });
+    expect(diarizer.detect(voice(181)).speaker).toBe("volunteer");
+    expect(diarizer.detect(voice(258)).speaker).toBe("donor");
+  });
+
+  it("does not label silence", () => {
+    const diarizer = new TwoVoiceDiarizer(voiceProfileFromAudio(voice(180))!);
+    expect(diarizer.detect(new Float32Array(16_000))).toMatchObject({ speaker: "unknown", confidence: 0, voiced: false });
+  });
+});
+
+describe("voice profile persistence (desktop only)", () => {
+  const store = new Map<string, string>();
+  beforeEach(() => {
+    store.clear();
+    (globalThis as { window?: unknown }).window = {
+      __TAURI_INTERNALS__: {},
+      localStorage: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) },
+    };
+  });
+  afterEach(() => {
+    delete (globalThis as { window?: unknown }).window;
+  });
+
+  it("saves and reloads the volunteer profile for the same user only", () => {
+    const profile = voiceProfileFromAudio(voice(180))!;
+    saveVoiceProfile("user-a", profile);
+    expect(loadStoredVoiceProfile("user-a")).toEqual(profile);
+    expect(loadStoredVoiceProfile("user-b")).toBeNull();
+    clearStoredVoiceProfile("user-a");
+    expect(loadStoredVoiceProfile("user-a")).toBeNull();
+  });
+
+  it("ignores stored data that is not a valid profile", () => {
+    store.set("stewardship-copilot.voice-profile.v2.user-a", JSON.stringify({ pitchHz: "high", bands: [1] }));
+    expect(loadStoredVoiceProfile("user-a")).toBeNull();
+  });
+
+  it("does nothing in a plain browser", () => {
+    delete (globalThis as { window?: unknown }).window;
+    saveVoiceProfile("user-a", voiceProfileFromAudio(voice(180))!);
+    expect(loadStoredVoiceProfile("user-a")).toBeNull();
   });
 });

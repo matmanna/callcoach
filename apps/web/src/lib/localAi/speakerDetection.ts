@@ -1,11 +1,12 @@
 /**
  * Session-only speaker matching for local call capture.
  *
- * A volunteer calibrates their own voice from one microphone segment. The result is a compact
- * acoustic profile (pitch, brightness, and spectral balance) held in memory only. Later segments
- * are compared against it. The profile is neither a recording nor an identifier, and it is cleared
- * when the call ends. One microphone cannot prove who is speaking, so callers can always override
- * a label.
+ * A volunteer calibrates their own voice once, from a short local sample. The result is a compact
+ * acoustic profile (pitch, brightness, and spectral balance). The donor's voice is learned during the
+ * call from the segments that do not match the volunteer. Profiles hold only aggregate numbers, never
+ * audio or transcript text. They live in memory for the call, and in Tauri the volunteer's profile
+ * can be kept on this device for later calls. One microphone cannot prove who is speaking, so callers
+ * can always override a label.
  *
  * Why these features: pitch and spectral balance differ much more between people than loudness
  * does, and both survive a change in microphone distance. Loudness is used only to skip silence.
@@ -25,6 +26,8 @@ export interface SpeakerDetection {
   readonly speaker: DetectedSpeaker;
   readonly confidence: number;
   readonly voiced: boolean;
+  /** True once a second voice (the donor's) has been learned for this call. */
+  readonly learnedOtherVoice?: boolean;
 }
 
 export const SAMPLE_RATE = 16_000;
@@ -40,6 +43,8 @@ const BANDS = BAND_EDGES_HZ.length - 1;
 /** Decision thresholds on the combined distance (0 = identical). Tuned on synthetic voices in the tests. */
 export const SAME_VOICE_MAX = 0.35;
 export const DIFFERENT_VOICE_MIN = 0.6;
+/** Two profiles this close are treated as the same voice when a donor is being learned. */
+const AMBIGUITY_MARGIN = 0.04;
 
 const hann = Float64Array.from({ length: WINDOW }, (_, i) => 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (WINDOW - 1)));
 
@@ -77,11 +82,11 @@ function fft(re: Float64Array, im: Float64Array): void {
 function pitchOf(frame: Float64Array): number | null {
   const minLag = Math.floor(SAMPLE_RATE / MAX_PITCH_HZ);
   const maxLag = Math.ceil(SAMPLE_RATE / MIN_PITCH_HZ);
-  let bestLag = -1;
-  let best = 0;
+  const correlation = new Float64Array(maxLag + 2);
   let energy0 = 0;
   for (let i = 0; i < frame.length; i += 1) energy0 += frame[i]! * frame[i]!;
   if (energy0 === 0) return null;
+  let best = 0;
   for (let lag = minLag; lag <= maxLag; lag += 1) {
     let num = 0;
     let e1 = 0;
@@ -92,13 +97,18 @@ function pitchOf(frame: Float64Array): number | null {
       e2 += frame[i + lag]! * frame[i + lag]!;
     }
     const norm = Math.sqrt(e1 * e2);
-    const r = norm > 0 ? num / norm : 0;
-    if (r > best) {
-      best = r;
-      bestLag = lag;
-    }
+    correlation[lag] = norm > 0 ? num / norm : 0;
+    best = Math.max(best, correlation[lag]!);
   }
-  if (bestLag < 0 || best < CLARITY_FLOOR) return null;
+  if (best < CLARITY_FLOOR) return null;
+  // Octave correction: a strong subharmonic peak can beat the true period (260 Hz read as 130 Hz).
+  // Take the shortest lag whose peak is nearly as strong as the best one.
+  for (let lag = minLag + 1; lag < maxLag; lag += 1) {
+    const r = correlation[lag]!;
+    if (r >= 0.9 * best && r >= correlation[lag - 1]! && r >= correlation[lag + 1]!) return SAMPLE_RATE / lag;
+  }
+  let bestLag = minLag;
+  for (let lag = minLag; lag <= maxLag; lag += 1) if (correlation[lag]! > correlation[bestLag]!) bestLag = lag;
   return SAMPLE_RATE / bestLag;
 }
 
@@ -210,4 +220,109 @@ export function mergeVoiceProfiles(profiles: readonly VoiceProfile[]): VoiceProf
   };
 }
 
-export const CALIBRATION_SEGMENTS = 3;
+const PROFILE_KEY = "stewardship-copilot.voice-profile.v2";
+const profileKey = (userId: string) => `${PROFILE_KEY}.${userId}`;
+const isDesktop = (): boolean => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+const isProfile = (value: unknown): value is VoiceProfile => {
+  if (!value || typeof value !== "object") return false;
+  const p = value as Partial<VoiceProfile>;
+  return (
+    typeof p.pitchHz === "number" && Number.isFinite(p.pitchHz) && p.pitchHz >= MIN_PITCH_HZ && p.pitchHz <= MAX_PITCH_HZ
+    && typeof p.centroidHz === "number" && Number.isFinite(p.centroidHz)
+    && Array.isArray(p.bands) && p.bands.length === BANDS && p.bands.every((b) => typeof b === "number" && Number.isFinite(b))
+  );
+};
+
+/** Desktop only: the volunteer's compact profile, kept on this device. Audio and transcript text are never stored. */
+export function loadStoredVoiceProfile(userId: string): VoiceProfile | null {
+  if (!isDesktop()) return null;
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(profileKey(userId)) ?? "null");
+    return isProfile(value) ? { pitchHz: value.pitchHz, centroidHz: value.centroidHz, bands: [...value.bands] } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveVoiceProfile(userId: string, profile: VoiceProfile): void {
+  if (isDesktop()) window.localStorage.setItem(profileKey(userId), JSON.stringify(profile));
+}
+
+export function clearStoredVoiceProfile(userId: string): void {
+  if (isDesktop()) window.localStorage.removeItem(profileKey(userId));
+}
+
+/**
+ * Pitch and brightness only. Band shares move a lot between segments, so they are left out when
+ * deciding whether two segments come from the same person.
+ */
+export function sameVoiceStable(a: VoiceProfile, b: VoiceProfile): boolean {
+  const semitones = Math.abs(12 * Math.log2(a.pitchHz / b.pitchHz));
+  const brightness = Math.abs(a.centroidHz - b.centroidHz) / Math.max(b.centroidHz, 1);
+  return semitones <= 1.5 && brightness <= 0.15;
+}
+
+const blend = (current: VoiceProfile, next: VoiceProfile, weight: number): VoiceProfile => ({
+  pitchHz: current.pitchHz * (1 - weight) + next.pitchHz * weight,
+  centroidHz: current.centroidHz * (1 - weight) + next.centroidHz * weight,
+  bands: current.bands.map((b, i) => b * (1 - weight) + (next.bands[i] ?? 0) * weight),
+});
+
+/**
+ * Two-voice diarization for one call. The volunteer profile comes from calibration. A voiced segment
+ * that does not match it starts a donor candidate. A second segment that matches the candidate
+ * confirms the donor voice. After that each segment goes to whichever profile is nearer, or is
+ * left `unknown` when the two are about equally close.
+ */
+export class TwoVoiceDiarizer {
+  private volunteer: VoiceProfile;
+  private donor: VoiceProfile | null = null;
+  private donorCandidate: VoiceProfile | null = null;
+
+  constructor(volunteer: VoiceProfile) {
+    this.volunteer = volunteer;
+  }
+
+  detect(audio: Float32Array): SpeakerDetection {
+    const candidate = voiceProfileFromAudio(audio);
+    if (!candidate) return { speaker: "unknown", confidence: 0, voiced: false, learnedOtherVoice: this.donor !== null };
+
+    const toVolunteer = voiceDistance(candidate, this.volunteer);
+    let speaker: DetectedSpeaker;
+    let distance: number;
+    if (!this.donor) {
+      if (toVolunteer <= SAME_VOICE_MAX) {
+        speaker = "volunteer";
+        distance = toVolunteer;
+        // Gentle drift correction while the volunteer keeps speaking.
+        this.volunteer = blend(this.volunteer, candidate, 0.1);
+      } else {
+        // Not the volunteer: provisional donor until a second matching segment confirms it.
+        speaker = "donor";
+        distance = toVolunteer;
+        if (this.donorCandidate && sameVoiceStable(candidate, this.donorCandidate)) {
+          this.donor = blend(this.donorCandidate, candidate, 0.5);
+          this.donorCandidate = null;
+        } else {
+          this.donorCandidate = candidate;
+        }
+      }
+    } else {
+      const toDonor = voiceDistance(candidate, this.donor);
+      distance = Math.min(toVolunteer, toDonor);
+      if (Math.abs(toVolunteer - toDonor) < AMBIGUITY_MARGIN && distance > SAME_VOICE_MAX) speaker = "unknown";
+      else speaker = toVolunteer <= toDonor ? "volunteer" : "donor";
+      if (speaker === "volunteer") this.volunteer = blend(this.volunteer, candidate, 0.05);
+      if (speaker === "donor") this.donor = blend(this.donor, candidate, 0.05);
+    }
+
+    // Each turn is judged on its own. Smoothing would hold the old speaker through a real turn change.
+    return {
+      speaker,
+      confidence: Math.max(0, Math.min(1, 1 - distance)),
+      voiced: true,
+      learnedOtherVoice: this.donor !== null,
+    };
+  }
+}

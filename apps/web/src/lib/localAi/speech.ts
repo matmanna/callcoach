@@ -1,4 +1,5 @@
 /** Local Whisper speech recognition. Remote model loading and browser caching are disabled. */
+import { LOCAL_MODEL_PATH, ORT_WASM_PATHS } from "./ner";
 /** Browser build: smallest Whisper, so the page loads fast on any laptop. */
 export const ASR_MODEL_WEB = "Xenova/whisper-tiny.en";
 /**
@@ -43,11 +44,13 @@ async function defaultFactory(device: "webgpu" | "wasm"): Promise<SpeechPipeline
   const tf = await import("@huggingface/transformers");
   tf.env.allowRemoteModels = false;
   tf.env.allowLocalModels = true;
-  tf.env.localModelPath = "/models/";
+  tf.env.localModelPath = LOCAL_MODEL_PATH;
   tf.env.useBrowserCache = false;
   tf.env.fetch = (input: string | URL, init?: RequestInit) => window.fetch(input, init);
   const onnx = tf.env.backends.onnx;
-  if (onnx.wasm) onnx.wasm.wasmPaths = "/ort/";
+  // Same module and WASM paths as NER. In Tauri a string path lets ONNX Runtime resolve an
+  // incompatible worker module; explicit paths work in both the webview and the browser.
+  if (onnx.wasm) onnx.wasm.wasmPaths = { ...ORT_WASM_PATHS };
   const pipeline = await tf.pipeline("automatic-speech-recognition", asrModelId(), { device, dtype: ASR_DTYPE });
   return (audio) => pipeline(audio) as unknown as Promise<SpeechResult>;
 }
