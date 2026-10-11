@@ -32,6 +32,8 @@ import { nowOf } from "../services/context.ts";
 import { archiveTeam, changeMemberRole, createTeam, listMembers, removeMember, teamTree, updateTeam } from "../services/teams.ts";
 import { postCallRoutes } from "./postcall.ts";
 import { volunteerRubric } from "../services/dashboard/rubricScores.ts";
+import { activityHeatmap } from "../services/activity.ts";
+import { searchFacts } from "../services/factSearch.ts";
 import { joinCodeStatus, joinWithCode, rotateJoinCode } from "../services/orgCodes.ts";
 
 export type ApiEnv = { Variables: { user: SessionUser | null; access: Access } };
@@ -103,6 +105,12 @@ export function apiRoutes(deps: Deps) {
     if (!user) throw new Error("authenticated route missing session user");
     const body = parseBody(z.strictObject({ code: z.string().trim().min(8).max(12) }), await jsonBody(c));
     return c.json(await joinWithCode(deps, { id: user.id, user_type: user.user_type }, body.code), 201);
+  });
+
+  // The volunteer's own activity heatmap.
+  api.get("/me/activity", async (c) => {
+    const access = c.get("access");
+    return c.json(await activityHeatmap(deps, { orgId: requireOrg(access), callerId: access.user.id }));
   });
 
   // The volunteer's own rubric results. Same rules as the coordinator view, for their calls only.
@@ -277,6 +285,12 @@ export function apiRoutes(deps: Deps) {
     const sheets = await collections(deps.db).fact_sheets.find({ org_id: orgId }).sort({ created_at: -1 }).toArray();
     const visible: FactSheetDoc[] = sheets.map((s) => ({ ...s, items: callerVisibleItems(s.items, nowOf(deps), staleDays(deps)) }));
     return c.json({ fact_sheets: visible });
+  });
+
+  // Keyword search over approved facts. Any signed-in member can search; drafts are never returned.
+  api.get("/fact-sheets/search", async (c) => {
+    const orgId = requireOrg(c.get("access"));
+    return c.json({ results: await searchFacts(deps, orgId, c.req.query("q") ?? "") });
   });
 
   // Kept for S2 clients: approves the item's current draft version (second-approver rule applies).

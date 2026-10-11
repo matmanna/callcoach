@@ -1,6 +1,7 @@
 import { CellText, DonorMix, LoadState, PageHeader, RangeNote, cellValue, type Cell } from "@/components/dash/bits";
 import { SeriesChart } from "@/components/dash/charts";
 import { Masonry } from "@/components/dash/Masonry";
+import { ActivityHeatmap } from "@/components/dash/ActivityHeatmap";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -263,6 +264,7 @@ function SharedPatterns() {
 }
 
 export function InsightsPage() {
+  const scope = useTeamScope();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const range = [from && `from=${from}`, to && `to=${to}`].filter(Boolean).join("&");
@@ -274,6 +276,9 @@ export function InsightsPage() {
         <label className="text-xs text-muted-foreground">From<Input type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
         <label className="text-xs text-muted-foreground">To<Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} /></label>
         <span className="pb-2 text-xs text-muted-foreground">{range ? "" : "Default: the last 12 weeks."}</span>
+      </div>
+      <div className="mb-4">
+        <ActivityHeatmap path={withQuery("/activity/heatmap", scope.q)} title="Calling activity by day" description="Approved calls per day over the last year, for the teams in scope. Days under 5 are not counted in the colour." />
       </div>
       <Masonry>
         <CallsPerWeek range={range} />

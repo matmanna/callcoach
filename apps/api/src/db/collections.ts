@@ -24,6 +24,15 @@ import type {
 } from "@sc/shared";
 import type { Db, ObjectId } from "mongodb";
 
+/**
+ * One point per approved call, in a time series collection (`call_activity`). Written in the same
+ * transaction as the approval. Metadata is ids and a source tag only: no donor, no outcome text.
+ */
+export interface ActivityPoint {
+  at: Date;
+  meta: { org_id: string; team_id: string; caller_id: string; source: "live" | "demo" };
+}
+
 /** Better Auth's user document (usePlural: true -> `users`), with our additional fields. */
 export interface AuthUserDoc {
   _id: ObjectId | string;
@@ -59,6 +68,7 @@ export function collections(db: Db) {
     pending_limits: db.collection<PendingLimitDoc>("pending_limits"),
     follow_ups: db.collection<FollowUpDoc>("follow_ups"),
     warmth_ratings: db.collection<WarmthDoc>("warmth_ratings"),
+    call_activity: db.collection<ActivityPoint>("call_activity"),
   };
 }
 export type Collections = ReturnType<typeof collections>;
@@ -86,6 +96,7 @@ export const TENANT_COLLECTIONS = [
   "pending_limits",
   "follow_ups",
   "warmth_ratings",
+  "call_activity",
 ] as const;
 export const AUTH_COLLECTIONS = ["users", "sessions", "accounts", "verifications"] as const;
 export const AUDIT_COLLECTION = "audit_log";

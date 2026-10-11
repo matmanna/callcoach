@@ -5,8 +5,9 @@
 import type { Db } from "mongodb";
 import { AUDIT_COLLECTION, AUTH_COLLECTIONS, TENANT_COLLECTIONS } from "./collections.ts";
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 export const SCHEMA_CHANGES: Record<number, string> = {
+  7: "Activity: call_activity time series (hourly buckets, 400-day retention) for heatmaps; Atlas Search index on fact items when running on Atlas.",
   6: "Org join codes: optional organizations.invite_code_hash (unique when set) and invite_code_rotated_at.",
   5: "Insights: optional call_logs.call_seconds (call length) for call_length and effectiveness charts.",
   4: "Onboarding: optional organizations profile fields (nonprofit_status, annual_revenue_band, staff_size_band, mission, country) and optional rubric item weight (missing means 1).",
@@ -16,14 +17,20 @@ export const SCHEMA_CHANGES: Record<number, string> = {
 };
 
 export const APP_ROLE = "stewardship_app";
+/** Activity points older than this expire automatically (TTL on the time series collection). */
+export const ACTIVITY_RETENTION_DAYS = 400;
 
 export async function initDb(db: Db, log: (s: string) => void = () => {}): Promise<void> {
   const existing = new Set((await db.listCollections({}, { nameOnly: true }).toArray()).map((c) => c.name));
   for (const name of [...TENANT_COLLECTIONS, ...AUTH_COLLECTIONS, AUDIT_COLLECTION, "schema_versions"]) {
-    if (!existing.has(name)) {
+    if (existing.has(name)) continue;
+    if (name === "call_activity") {
+      // Time series: buckets by hour, compressed, and expires points after the retention window.
+      await db.createCollection(name, { timeseries: { timeField: "at", metaField: "meta", granularity: "hours" }, expireAfterSeconds: ACTIVITY_RETENTION_DAYS * 86_400 });
+    } else {
       await db.createCollection(name);
-      log(`created collection ${name}`);
     }
+    log(`created collection ${name}`);
   }
 
   await db.collection("organizations").createIndex({ slug: 1 }, { unique: true });

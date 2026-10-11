@@ -27,6 +27,7 @@ import type { Deps } from "../services/context.ts";
 import { CONTACT_SORTS, deleteDossier, donorForCoordinator, getContactHistory, getDossier, listContacts, type ContactSort } from "../services/dashboard/contacts.ts";
 import { approveVersion, createVersion, factWarnings, listSheets, loadSheet, reverifyItem } from "../services/dashboard/facts.ts";
 import { volunteerRubric } from "../services/dashboard/rubricScores.ts";
+import { activityHeatmap } from "../services/activity.ts";
 import { CHART_KINDS, COMPARE_KINDS, campaignsOverview, chart, compare, map, type ChartKind } from "../services/dashboard/insights.ts";
 import { changeLimit } from "../services/dashboard/limits.ts";
 import {
@@ -121,6 +122,15 @@ export function dashboardRoutes(api: Hono<ApiEnv>, deps: Deps) {
     const sort = parseVolunteerSort(q.sort);
     const status = q.status === "removed" || q.status === "all" ? q.status : "active";
     return c.json(await listVolunteers(deps, scopeOf(c), { sort, dir: q.dir === "desc" ? "desc" : "asc", status }));
+  });
+  // Activity heatmaps: team scope for the insights tab, one person for a volunteer profile.
+  api.get("/activity/heatmap", async (c) => {
+    const scope = scopeOf(c);
+    return c.json(await activityHeatmap(deps, { orgId: scope.orgId, teamIds: scope.teamIds }));
+  });
+  api.get("/volunteers/:id/activity", async (c) => {
+    const scope = scopeOf(c);
+    return c.json(await activityHeatmap(deps, { orgId: scope.orgId, teamIds: scope.teamIds, callerId: c.req.param("id") }));
   });
   api.get("/volunteers/:id/rubric", async (c) => {
     const scope = scopeOf(c);

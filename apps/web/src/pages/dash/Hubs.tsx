@@ -3,6 +3,7 @@
  * used to list separately. The pages themselves are unchanged.
  */
 import { CardHub, TabHub } from "@/components/dash/Hub";
+import { FactSearch } from "@/components/dash/FactSearch";
 import { Button } from "@/components/ui/button";
 import { Import } from "@/pages/coordinator/Import";
 import { Teams } from "@/pages/coordinator/Teams";
@@ -60,6 +61,7 @@ export function KnowledgeHub() {
     <TabHub
       title="Knowledge"
       description="What callers may say: fact sheets, the call rubric, guidance, and handoffs."
+      actions={<FactSearch />}
       tabs={[
         { key: "fact-sheets", label: "Fact sheets", render: () => <FactSheetEditorPage /> },
         { key: "rubrics", label: "Rubrics", render: () => <RubricsPage /> },

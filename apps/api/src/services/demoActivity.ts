@@ -110,6 +110,11 @@ export async function seedDemoActivity(
     logs.push({ _id: randomUUID(), ...demo, demo: true, team_id: team._id, donor_id: donor._id, caller_id: callerId, status: "approved", draft: i % 4 === 0 ? { ...approved, donor_stated_reason: "Draft wording" } : approved, model_draft: "disabled", approved, approved_at: at, corrects_log_id: null, created_at: at, call_seconds: i % 10 === 9 ? null : seconds });
   }
   await px.call_logs.insertMany(logs as never);
+  // Same points the approval path writes, so the heatmaps match the logs. Demo points are tagged so a re-run replaces them.
+  await c.call_activity.deleteMany({ "meta.org_id": orgId, "meta.source": "demo" });
+  if (logs.length) {
+    await c.call_activity.insertMany(logs.map((l) => ({ at: l.approved_at!, meta: { org_id: orgId, team_id: l.team_id, caller_id: callerId, source: "demo" as const } })));
+  }
 
   const flagged = logs.filter((l) => l.approved!.flags.length);
   const flags: Array<FlagRow & { demo: true }> = flagged.map((l, i) => ({ _id: randomUUID(), ...demo, demo: true, team_id: l.team_id, donor_id: l.donor_id, log_id: l._id, label: l.approved!.flags[0]!, reason: l.approved!.flags[0] === "DISTRESS" ? "Donor shared distress or a loss during the call." : "Donor asked not to be contacted this way.", status: i % 4 === 3 ? "resolved" : "proposed", created_at: l.created_at, decided_by: null, decided_at: null, decision_note: null }));

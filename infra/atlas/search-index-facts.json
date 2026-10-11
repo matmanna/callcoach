@@ -1,0 +1,14 @@
+{
+  "name": "fact_text",
+  "definition": {
+    "mappings": {
+      "dynamic": false,
+      "fields": {
+        "text": { "type": "string" },
+        "source": { "type": "string" },
+        "org_id": { "type": "token" },
+        "status": { "type": "token" }
+      }
+    }
+  }
+}
