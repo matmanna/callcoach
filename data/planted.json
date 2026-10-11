@@ -1,0 +1,20 @@
+{
+  "values": [
+    { "value": "Rosalind Featherstone", "type": "NAME" },
+    { "value": "Rosalind", "type": "NAME" },
+    { "value": "Featherstone", "type": "NAME" },
+    { "value": "Walter", "type": "NAME" },
+    { "value": "Jordan Pike", "type": "NAME" },
+    { "value": "Jordan", "type": "NAME" },
+    { "value": "Pike", "type": "NAME" },
+    { "value": "(814) 555-0142", "type": "PHONE" },
+    { "value": "555-0142", "type": "PHONE" },
+    { "value": "rfeatherstone@example.org", "type": "EMAIL" },
+    { "value": "47 Juniper Hollow Road", "type": "ADDRESS" },
+    { "value": "Juniper Hollow", "type": "ADDRESS" },
+    { "value": "Larkspur Valley Hospital", "type": "EMPLOYER" },
+    { "value": "Larkspur", "type": "EMPLOYER" },
+    { "value": "Millbrook", "type": "TOWN" },
+    { "value": "husband passed away", "type": "FAMILY" }
+  ]
+}

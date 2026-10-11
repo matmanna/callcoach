@@ -1,0 +1,14 @@
+{
+  "rules": [
+    {
+      "id": "FAMILY_DECEASED",
+      "patterns": [
+        "\\bmy (husband|wife|partner|mother|father|mom|dad|son|daughter|brother|sister)\\b[^.]{0,30}\\b(passed away|died|passed)\\b",
+        "\\b(lost|losing) my (husband|wife|partner|mother|father|mom|dad|son|daughter|brother|sister)\\b"
+      ],
+      "placeholder": "[FAMILY: deceased, recent]",
+      "type": "FAMILY",
+      "tag": "FAMILY_DECEASED_RECENT"
+    }
+  ]
+}

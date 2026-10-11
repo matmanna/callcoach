@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: stewardship
+    ports:
+      # Override with PG_PORT if 5432 is already taken on your machine.
+      - "${PG_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d stewardship"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+volumes:
+  pgdata:

@@ -1,0 +1,44 @@
+{
+  "rules": [
+    {
+      "id": "DISTRESS_LOSS",
+      "type": "distress",
+      "priority": 1,
+      "tag": "FAMILY_DECEASED_RECENT",
+      "triggers": ["[family: deceased, recent]", "passed away", "lost my", "funeral", "miss him", "miss her"],
+      "card_text": "Pause. Acknowledge the loss in your own words and let them lead. Do not move on to the next topic until they do.",
+      "cooldown_s": 60,
+      "enabled": true
+    },
+    {
+      "id": "STOP_CONTACT",
+      "type": "stop_contact",
+      "priority": 2,
+      "tag": "STOP_CONTACT_REQUESTED",
+      "triggers": ["stop calling", "take me off", "don't call", "do not call", "remove me"],
+      "card_text": "Acknowledge the request, say you will pass it on to the office, and close the call kindly. No further questions.",
+      "cooldown_s": 60,
+      "enabled": true
+    },
+    {
+      "id": "PROGRAM_Q",
+      "type": "fact",
+      "priority": 3,
+      "tag": "PROGRAM_QUESTION",
+      "fact_id": "f-mentoring",
+      "triggers": ["what does", "where does the money", "youth program"],
+      "cooldown_s": 60,
+      "enabled": true
+    },
+    {
+      "id": "EMAIL_PREF",
+      "type": "tip",
+      "priority": 4,
+      "tag": "EMAIL_PREFERRED",
+      "triggers": ["email me", "prefer email", "rather email", "send me an email"],
+      "card_text": "Note that they prefer email. Do not read their address back aloud; the office has it on file.",
+      "cooldown_s": 60,
+      "enabled": true
+    }
+  ]
+}

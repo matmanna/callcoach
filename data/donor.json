@@ -1,0 +1,13 @@
+{
+  "id": "d-102",
+  "first_name": "Rosalind",
+  "last_name": "Featherstone",
+  "spouse_name": "Walter",
+  "employer": "Larkspur Valley Hospital",
+  "town": "Millbrook",
+  "campaign": "Spring Youth Appeal 2026",
+  "gift_band": "$100-$249",
+  "past_gift_count": 7,
+  "last_gift_band": "$100-$249",
+  "limits": ["No phone calls during tax season (February to April)"]
+}
