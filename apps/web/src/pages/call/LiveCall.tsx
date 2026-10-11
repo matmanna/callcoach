@@ -16,8 +16,8 @@ import cueRaw from "../../../../../data/cue-rules.json";
 import logRaw from "../../../../../data/log-rules.json";
 import phraseRaw from "../../../../../data/phrase-rules.json";
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router";
-import { BookOpen, CircleUserRound, FileText, Home, Phone, Sparkles, Target } from "lucide-react";
+import { useNavigate, useParams, useSearchParams } from "react-router";
+import { BookOpen, Pause, PhoneOff, Play, Settings2, Sparkles, Target } from "lucide-react";
 import { toast } from "sonner";
 
 const cueRules = CueRulesFile.parse(cueRaw).rules;
@@ -266,20 +266,14 @@ export function LiveCall() {
   }, [modelState, donor, me, listening]);
 
   return (
-    <div className="min-h-screen bg-[#111318] px-4 py-5 text-slate-100 sm:px-7">
-      <nav className="fixed left-4 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-2 rounded-2xl border border-white/10 bg-[#20242d]/90 p-2 shadow-xl backdrop-blur lg:flex" aria-label="Call navigation">
-        <Link to="/home" aria-label="Home" className="rounded-xl p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"><Home size={18} /></Link>
-        <Link to="/calls" aria-label="Call list" className="rounded-xl bg-sky-300/15 p-2 text-sky-200"><Phone size={18} /></Link>
-        <Link to={`/call/${donorId}/brief`} aria-label="Open donor brief" className="rounded-xl p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"><FileText size={18} /></Link>
-        <Link to="/profile" aria-label="Profile" className="rounded-xl p-2 text-slate-400 transition hover:bg-white/10 hover:text-white"><CircleUserRound size={18} /></Link>
-      </nav>
+    <div className="min-h-screen bg-[#f4f0e6] px-4 py-5 text-[#26352c] sm:px-7">
       <header className="mx-auto flex max-w-7xl items-center justify-between">
-        <div><p className="text-xs font-medium tracking-[0.2em] text-slate-400">LIVE CALL</p><h1 className="mt-1 text-lg font-semibold">{brief ? `${brief.donor.first_name} ${brief.donor.last_name}` : "Preparing donor brief"}</h1></div>
-        {listening ? <div className="flex items-center gap-2 text-xs text-slate-300"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />Listening locally</div> : null}
+        <div><p className="text-xs font-medium tracking-[0.2em] text-[#6f796d]">LIVE CALL</p><h1 className="mt-1 text-lg font-semibold">{brief ? `${brief.donor.first_name} ${brief.donor.last_name}` : "Preparing donor brief"}</h1></div>
+        {listening ? <div className="flex items-center gap-2 text-xs text-[#526257]"><span className="h-2 w-2 animate-pulse rounded-full bg-[#6d8c6c]" />Listening locally</div> : null}
       </header>
 
       <div className="mx-auto mt-6 grid max-w-7xl gap-5 lg:grid-cols-[minmax(250px,0.8fr)_minmax(320px,1.2fr)_minmax(250px,0.8fr)]">
-        <aside className="rounded-2xl border border-amber-950/20 bg-[#f0dfaf] p-5 text-stone-800 shadow-xl">
+        <aside className="rounded-2xl border border-[#d5c9af] bg-[#eee6d5] p-5 text-[#384238] shadow-sm">
           <p className="text-xs font-semibold tracking-[0.18em] text-stone-500">CALL DOSSIER</p>
           <h2 className="mt-3 text-xl font-semibold">{brief?.donor.first_name} {brief?.donor.last_name}</h2>
           <p className="mt-1 text-sm text-stone-600">{brief?.donor.campaign}</p>
@@ -288,19 +282,19 @@ export function LiveCall() {
           {brief?.talking_points.length ? <div className="mt-5 border-t border-stone-400/30 pt-4"><p className="flex items-center gap-2 text-xs font-semibold tracking-wide text-stone-500"><BookOpen size={14} />APPROVED TALKING POINTS</p>{brief.talking_points.slice(0, 3).map((point, index) => <p key={index} className="mt-2 text-sm leading-relaxed">{point}</p>)}</div> : null}
         </aside>
 
-        <section className="min-h-[500px] rounded-2xl border border-white/8 bg-[#191c23] p-5 shadow-2xl">
-          <div className="flex items-center justify-between"><p className="text-sm text-slate-400">Private local transcript</p>{processing ? <Badge variant="outline" className="border-slate-600 text-slate-300">processing</Badge> : null}</div>
-          <div className="mt-12 text-center"><div className={`mx-auto flex h-28 w-28 items-center justify-center rounded-full border border-sky-200/20 bg-sky-300/10 ${listening ? "animate-pulse" : ""}`}><span className="h-16 w-16 rounded-full bg-sky-300/30" /></div><p className="mt-5 text-sm text-slate-300">{listening ? "Your microphone is being processed on this device." : "Local audio is ready when the call starts."}</p></div>
-          <div className="mt-10 space-y-3">{turns.slice(-3).map((turn) => <div key={turn.id} className="rounded-xl bg-white/5 p-3 text-sm"><span className="text-xs font-medium uppercase tracking-wide text-slate-400">{turn.speaker}</span><p className="mt-1 leading-relaxed text-slate-200">{turn.scrubbed}</p></div>)}{!turns.length ? <p className="text-center text-sm text-slate-500">Transcript stays on this device and is scrubbed before it appears here.</p> : null}</div>
-          {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}{held ? <p className="mt-4 text-sm text-amber-200">{held} segment(s) held while local redaction completes.</p> : null}
+        <section className="min-h-[500px] rounded-2xl border border-[#d8d4c8] bg-[#fbf8f1] p-5 shadow-sm">
+          <div className="flex items-center justify-between"><p className="text-sm text-[#687369]">Private local transcript</p>{processing ? <Badge variant="outline" className="border-[#b9c9b6] text-[#526257]">processing</Badge> : null}</div>
+          <div className="mt-12 text-center"><div className={`mx-auto flex h-28 w-28 items-center justify-center rounded-full border border-[#c8d6c4] bg-[#e4eee1] ${listening ? "animate-pulse" : ""}`}><span className="h-16 w-16 rounded-full bg-[#b8cfb6]" /></div><p className="mt-5 text-sm text-[#657066]">{listening ? "Listening and redacting on this device." : "Local audio will begin with the call."}</p></div>
+          <div className="mt-10 space-y-3">{turns.slice(-3).map((turn) => <div key={turn.id} className="rounded-xl border border-[#e2ddd0] bg-[#f4f0e7] p-3 text-sm"><span className="text-xs font-medium uppercase tracking-wide text-[#778175]">{turn.speaker}</span><p className="mt-1 leading-relaxed text-[#384238]">{turn.scrubbed}</p></div>)}{!turns.length ? <p className="text-center text-sm text-[#879084]">Scrubbed local turns will appear here.</p> : null}</div>
+          {error ? <p className="mt-4 text-sm text-rose-700">{error}</p> : null}{held ? <p className="mt-4 text-sm text-[#8a6a33]">{held} segment(s) held while local redaction completes.</p> : null}
         </section>
 
-        {activeCue ? <aside className="rounded-2xl border border-sky-100/20 bg-gradient-to-br from-sky-100 to-blue-200 p-5 text-slate-900 shadow-xl"><p className="text-xs font-semibold tracking-[0.18em] text-slate-500">CURRENT CUE</p><p className="mt-5 text-lg font-medium leading-relaxed">{activeCue.card_text}</p>{activeCue.source ? <p className="mt-4 text-xs text-slate-600">Source: {activeCue.source} · verified {activeCue.verified_on}</p> : null}<div className="mt-8 flex gap-2">{cueHistory.map((cue, index) => <button key={`${cue.rule_id}-${index}`} onClick={() => setActiveCue(cue)} aria-label={`Show cue ${index + 1}`} className={`h-2.5 w-2.5 rounded-full ${activeCue.rule_id === cue.rule_id ? "bg-slate-900" : "bg-slate-400/50"}`} />)}</div><p className="mt-4 text-xs text-slate-600">One cue per donor turn, with at least 15 seconds between cues.</p></aside> : <div className="flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-slate-600/50 p-6 text-center text-sm text-slate-500"><div><Sparkles className="mx-auto mb-3 text-slate-600" size={22} /><p>No cue right now.</p><p className="mt-1 text-xs">A single approved cue appears only when the donor&apos;s words match a rule.</p></div></div>}
+        {activeCue ? <aside className="rounded-2xl border border-[#c8d6c4] bg-[#e4eee1] p-5 text-[#334238] shadow-sm"><p className="text-xs font-semibold tracking-[0.18em] text-[#6e7d70]">CURRENT CUE</p><p className="mt-5 text-lg font-medium leading-relaxed">{activeCue.card_text}</p>{activeCue.source ? <p className="mt-4 text-xs text-[#5d6d61]">Source: {activeCue.source} · verified {activeCue.verified_on}</p> : null}<div className="mt-8 flex gap-2">{cueHistory.map((cue, index) => <button key={`${cue.rule_id}-${index}`} onClick={() => setActiveCue(cue)} aria-label={`Show cue ${index + 1}`} className={`h-2.5 w-2.5 rounded-full ${activeCue.rule_id === cue.rule_id ? "bg-[#49644d]" : "bg-[#aabca6]"}`} />)}</div><p className="mt-4 text-xs text-[#5d6d61]">One cue per donor turn, with at least 15 seconds between cues.</p></aside> : <div className="flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-[#c9c4b7] p-6 text-center text-sm text-[#7b8378]"><div><Sparkles className="mx-auto mb-3 text-[#9aa696]" size={22} /><p>No cue right now.</p><p className="mt-1 text-xs">A single approved cue appears only when the donor&apos;s words match a rule.</p></div></div>}
       </div>
 
-      <div className="fixed inset-x-0 bottom-6 z-30 flex justify-center"><div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#242832]/95 px-4 py-3 shadow-2xl backdrop-blur"><Button size="sm" variant="outline" className="border-white/15 bg-transparent text-slate-100 hover:bg-white/10 hover:text-white" onClick={() => setControlsOpen(true)}>Controls</Button>{listening ? <Button size="sm" variant="outline" className="border-white/15 bg-transparent text-slate-100 hover:bg-white/10 hover:text-white" onClick={() => void stopListening()}>Pause</Button> : <Button size="sm" variant="outline" className="border-white/15 bg-transparent text-slate-100 hover:bg-white/10 hover:text-white" onClick={() => void startListening()} disabled={modelState !== "ready"}>Resume</Button>}<Button size="sm" variant="destructive" onClick={() => void finish()} disabled={celebrating}>{celebrating ? "Call complete" : "Hang up & review"}</Button></div></div>
-      <div className="fixed bottom-24 right-5 z-40 flex w-72 flex-col gap-2">{liveFlags.map((flag) => <div key={flag.id} className="animate-in slide-in-from-bottom-5 fade-in rounded-xl border border-amber-300/40 bg-[#2d2418] p-3 text-sm text-amber-50 shadow-xl"><p className="font-semibold">Review suggested: {flag.label}</p><p className="mt-1 text-amber-100/80">{flag.reason}</p></div>)}</div>
-      {celebrating ? <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">{Array.from({ length: 24 }, (_, index) => <span key={index} className="absolute top-1/3 h-2 w-2 animate-ping rounded-full bg-sky-300" style={{ left: `${(index * 17) % 100}%`, animationDelay: `${index * 35}ms` }} />)}</div> : null}
+      <div className="fixed inset-x-0 bottom-6 z-30 flex justify-center"><div className="flex items-center gap-2 rounded-2xl border border-[#d2c8b6] bg-[#f8f4eb] px-3 py-3 shadow-lg"><Button size="icon-sm" variant="outline" className="border-[#d5cabb] bg-[#fffdf8] text-[#4d5e50]" onClick={() => setControlsOpen(true)} aria-label="Call controls" title="Call controls"><Settings2 size={17} /></Button>{listening ? <Button size="icon-sm" variant="outline" className="border-[#d5cabb] bg-[#fffdf8] text-[#4d5e50]" onClick={() => void stopListening()} aria-label="Pause listening" title="Pause listening"><Pause size={17} /></Button> : <Button size="icon-sm" variant="outline" className="border-[#d5cabb] bg-[#fffdf8] text-[#4d5e50]" onClick={() => void startListening()} disabled={modelState !== "ready"} aria-label="Resume listening" title="Resume listening"><Play size={17} /></Button>}<Button size="icon-sm" variant="destructive" onClick={() => void finish()} disabled={celebrating} aria-label="Hang up and review" title="Hang up and review"><PhoneOff size={17} /></Button></div></div>
+      <div className="fixed bottom-24 right-5 z-40 flex w-72 flex-col gap-2">{liveFlags.map((flag) => <div key={flag.id} className="animate-in slide-in-from-bottom-5 fade-in rounded-xl border border-[#d4c8ad] bg-[#f7f1e4] p-3 text-sm text-[#4b4638] shadow-lg"><p className="font-semibold">Review suggested: {flag.label}</p><p className="mt-1 text-[#716852]">{flag.reason}</p></div>)}</div>
+      {celebrating ? <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">{Array.from({ length: 24 }, (_, index) => <span key={index} className="absolute top-1/3 h-2 w-2 animate-ping rounded-full bg-[#a9c4a5]" style={{ left: `${(index * 17) % 100}%`, animationDelay: `${index * 35}ms` }} />)}</div> : null}
 
       <Dialog open={calibrationOpen} onOpenChange={(open) => { if (calibrationState !== "recording") setCalibrationOpen(open); }}>
         <DialogContent showCloseButton={calibrationState !== "recording"}>
