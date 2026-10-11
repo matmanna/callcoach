@@ -10,6 +10,7 @@ import { LocalAudioCapture } from "@/lib/localAi/audioCapture";
 import { redactTurnAsync } from "@/lib/localAi/asyncRedactor";
 import { loadNer, runNer } from "@/lib/localAi/ner";
 import { loadSpeechModel, transcribeLocal } from "@/lib/localAi/speech";
+import { detectSpeaker, voiceProfileFromAudio, type SpeakerDetection, type VoiceProfile } from "@/lib/localAi/speakerDetection";
 import { buildKnownIdentifiers, draftFromNote, redactionCounts } from "@sc/rules";
 import { CueRulesFile, LogRulesFile, PhraseRulesFile, type Donor, type DonorDoc, type RawTurn, type Turn } from "@sc/shared";
 import cueRaw from "../../../../../data/cue-rules.json";
@@ -53,17 +54,28 @@ export function LiveCall() {
   const [listening, setListening] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [speaker, setSpeaker] = useState<RawTurn["speaker"]>("donor");
+  const [autoDetectSpeaker, setAutoDetectSpeaker] = useState(true);
+  const [calibratingSpeaker, setCalibratingSpeaker] = useState(false);
+  const [speakerProfileReady, setSpeakerProfileReady] = useState(false);
+  const [lastDetection, setLastDetection] = useState<SpeakerDetection | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [held, setHeld] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const capture = useRef<LocalAudioCapture | null>(null);
   const turnsRef = useRef<Turn[]>([]);
   const speakerRef = useRef<RawTurn["speaker"]>("donor");
+  const autoDetectSpeakerRef = useRef(true);
+  const calibratingSpeakerRef = useRef(false);
+  const volunteerVoiceProfile = useRef<VoiceProfile | null>(null);
   const startedAt = useRef(0);
 
   useEffect(() => {
     speakerRef.current = speaker;
   }, [speaker]);
+
+  useEffect(() => {
+    autoDetectSpeakerRef.current = autoDetectSpeaker;
+  }, [autoDetectSpeaker]);
 
   useEffect(() => {
     if (!donorId) return;
@@ -97,9 +109,24 @@ export function LiveCall() {
       capture.current = await LocalAudioCapture.start(async (audio) => {
         setProcessing(true);
         try {
+          if (calibratingSpeakerRef.current) {
+            const profile = voiceProfileFromAudio(audio);
+            if (profile) {
+              volunteerVoiceProfile.current = profile;
+              calibratingSpeakerRef.current = false;
+              setCalibratingSpeaker(false);
+              setSpeakerProfileReady(true);
+              setLastDetection(null);
+            }
+          }
+          const detection = volunteerVoiceProfile.current && autoDetectSpeakerRef.current
+            ? detectSpeaker(audio, volunteerVoiceProfile.current)
+            : null;
+          if (detection) setLastDetection(detection);
           const text = await transcribeLocal(audio);
           if (!text) return;
-          const raw: RawTurn = { id: crypto.randomUUID(), speaker: speakerRef.current, raw: text, t: Date.now() - startedAt.current };
+          const detectedSpeaker = detection?.speaker === "unknown" ? null : detection?.speaker;
+          const raw: RawTurn = { id: crypto.randomUUID(), speaker: detectedSpeaker ?? speakerRef.current, raw: text, t: Date.now() - startedAt.current };
           const result = await redactTurnAsync(raw, { known, phraseRules, ner: { enabled: true, run: runNer } });
           if (result.status === "held") {
             setHeld((count) => count + 1);
@@ -124,6 +151,12 @@ export function LiveCall() {
     if (active) await active.stop();
   };
 
+  const calibrateVolunteerVoice = () => {
+    calibratingSpeakerRef.current = true;
+    setCalibratingSpeaker(true);
+    setLastDetection(null);
+  };
+
   const finish = async () => {
     await stopListening();
     const localTurns = turnsRef.current;
@@ -138,6 +171,8 @@ export function LiveCall() {
         nerBackend: backend,
       });
     }
+    volunteerVoiceProfile.current = null;
+    calibratingSpeakerRef.current = false;
     navigate(`/call/${donorId}/post?log=${logId}`);
   };
 
@@ -159,7 +194,7 @@ export function LiveCall() {
       <Card>
         <CardHeader>
           <CardTitle>Local listening AI</CardTitle>
-          <CardDescription>Prepare the bundled Whisper and NER models before listening.</CardDescription>
+          <CardDescription>Prepare the bundled Whisper and NER models before listening. Speaker labels are detected locally after you calibrate your voice.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -177,6 +212,20 @@ export function LiveCall() {
               <SelectContent><SelectItem value="donor">Donor</SelectItem><SelectItem value="volunteer">Volunteer</SelectItem></SelectContent>
             </Select>
             {!listening ? <Button onClick={() => void startListening()} disabled={modelState !== "ready" || !donor}>Start listening</Button> : <Button variant="destructive" onClick={() => void stopListening()}>Stop listening</Button>}
+          </div>
+          <div className="rounded-lg border p-3 text-sm space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <strong>Local speaker detection</strong>
+              {speakerProfileReady ? <Badge variant="secondary">Volunteer voice calibrated</Badge> : <Badge variant="outline">Manual labels</Badge>}
+              <Button size="sm" variant="outline" onClick={calibrateVolunteerVoice} disabled={!listening || calibratingSpeaker}>
+                {calibratingSpeaker ? "Listening for your voice…" : "Calibrate my voice"}
+              </Button>
+              <Button size="sm" variant={autoDetectSpeaker ? "secondary" : "outline"} onClick={() => setAutoDetectSpeaker((enabled) => !enabled)} disabled={!speakerProfileReady}>
+                Auto detection: {autoDetectSpeaker ? "on" : "off"}
+              </Button>
+            </div>
+            <p className="text-muted-foreground">With the call on speaker, press Calibrate my voice and speak for one segment. Labels are suggestions from this microphone only; use Current speaker to override them. No voice profile, audio, or raw text leaves this device.</p>
+            {lastDetection?.voiced ? <p className="text-muted-foreground">Latest local label: likely {lastDetection.speaker} ({Math.round(lastDetection.confidence * 100)}% match confidence).</p> : null}
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           {held ? <p className="text-sm text-destructive">{held} segment(s) held because local NER did not complete.</p> : null}
