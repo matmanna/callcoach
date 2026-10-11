@@ -1,0 +1,30 @@
+.lab { font-family: system-ui, sans-serif; font-size: 14px; color: #1a1a1a; background: #fff; padding: 8px 16px 48px; }
+.lab h1 { font-size: 20px; margin: 8px 0; }
+.lab h2 { font-size: 16px; margin: 12px 0 6px; }
+.lab h3 { font-size: 14px; margin: 10px 0 4px; }
+.lab-banner { background: #fff3cd; border: 1px solid #c9a227; padding: 6px 10px; font-weight: 600; margin-bottom: 6px; }
+.lab-banner.raw { background: #fde2e1; border-color: #c0392b; }
+.lab-strip { display: flex; gap: 16px; flex-wrap: wrap; background: #f3f3f3; padding: 4px 8px; margin: 6px 0; font-family: ui-monospace, monospace; font-size: 12px; }
+.lab-cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.9fr); gap: 12px; }
+@media (max-width: 1100px) { .lab-cols { grid-template-columns: minmax(0, 1fr); } }
+.lab-col { border: 1px solid #ccc; padding: 8px; min-width: 0; }
+.lab-turn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid #eee; padding: 4px 0; }
+.lab-turn .who { font-weight: 600; font-size: 11px; color: #555; grid-column: 1 / -1; }
+.lab pre { white-space: pre-wrap; word-break: break-word; background: #f7f7f7; padding: 6px; font-size: 12px; max-height: 320px; overflow: auto; }
+.lab table { border-collapse: collapse; font-size: 12px; margin: 4px 0; }
+.lab th, .lab td { border: 1px solid #ccc; padding: 2px 6px; text-align: left; vertical-align: top; }
+.hl-known { background: #cfe8ff; }
+.hl-regex { background: #d9f7d0; }
+.hl-phrase { background: #ead7ff; }
+.hl-ner { background: #ffe1b3; }
+.hl-ner.hl-known, .hl-ner.hl-regex, .hl-ner.hl-phrase { box-shadow: inset 0 -2px 0 #e08a00; }
+.hl-survivor { color: #b00000; font-weight: 700; text-decoration: underline wavy #b00000; }
+.lab .swatch { display: inline-block; width: 10px; height: 10px; margin: 0 3px 0 8px; vertical-align: middle; }
+.badge { display: inline-block; padding: 0 5px; border-radius: 3px; font-size: 11px; font-weight: 700; }
+.badge.mock { background: #444; color: #fff; }
+.badge.ok { background: #d9f7d0; }
+.badge.bad { background: #fde2e1; }
+.badge.warn { background: #fff3cd; }
+.held { border: 2px solid #c0392b; padding: 6px; background: #fde2e1; margin: 6px 0; }
+.lab button { margin: 2px 4px 2px 0; }
+.lab .muted { color: #666; }

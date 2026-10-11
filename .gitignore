@@ -3,3 +3,6 @@ dist/
 .env
 *.log
 .vite/
+# Local AI model + ONNX Runtime files (pnpm models:fetch)
+apps/web/public/models/
+apps/web/public/ort/

@@ -3,14 +3,19 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.28.5",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "concurrently -n web,api,crm -c cyan,green,magenta \"pnpm --filter @sc/web dev\" \"pnpm --filter @sc/api dev\" \"pnpm --filter @sc/crm-stub dev\"",
     "test": "vitest run",
     "typecheck": "pnpm -r --parallel typecheck",
     "db:generate": "pnpm --filter @sc/api db:generate",
     "db:migrate": "pnpm --filter @sc/api db:migrate",
-    "db:seed": "pnpm --filter @sc/api db:seed"
+    "db:seed": "pnpm --filter @sc/api db:seed",
+    "desktop:dev": "pnpm --filter @sc/desktop dev",
+    "desktop:build": "pnpm --filter @sc/desktop build",
+    "models:fetch": "pnpm --filter @sc/web models:fetch"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

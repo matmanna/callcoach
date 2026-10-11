@@ -4,4 +4,6 @@ import { defineConfig } from "vite";
 export default defineConfig({
   oxc: { jsx: { runtime: "automatic" } },
   server: { port: 5173 },
+  // LAB_ENABLED gates the lab routes client-side (lab only).
+  envPrefix: ["VITE_", "LAB_"],
 });

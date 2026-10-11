@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1149.0",
+    "@aws-sdk/client-comprehend": "^3.1149.0",
     "@hono/node-server": "^2.1.4",
     "@sc/rules": "workspace:*",
     "@sc/shared": "workspace:*",

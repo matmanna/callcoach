@@ -1,10 +1,13 @@
 import { ApprovePayload, FlagResult } from "@sc/shared";
 import { Hono } from "hono";
 import type { z } from "zod";
+import { labRoutes } from "./routes/lab/index.ts";
 
 export const app = new Hono();
 
 app.get("/health", (c) => c.json({ ok: true }));
+
+app.route("/lab", labRoutes()); // LAB ONLY: remove with apps/api/src/routes/lab
 
 /** Error body lists field paths and issue codes only, never submitted values. */
 function issues(error: z.ZodError) {

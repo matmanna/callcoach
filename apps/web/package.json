@@ -6,17 +6,21 @@
   "scripts": {
     "dev": "vite --port 5173 --strictPort",
     "build": "vite build",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json",
+    "models:fetch": "tsx scripts/fetch-models.ts"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.3.1",
     "@sc/rules": "workspace:*",
     "@sc/shared": "workspace:*",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "@types/node": "^22.0.0"
   }
 }

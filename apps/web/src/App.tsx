@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { matchLabRoute } from "./routes/lab/index.tsx";
 
 // Minimal path router; swap for a router library only if the team agrees to add one.
 type Route = { name: "gifts" } | { name: "call"; id: string } | { name: "review"; id: string } | { name: "coordinator" } | { name: "not_found" };
@@ -21,6 +22,8 @@ export function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  const lab = matchLabRoute(path); // LAB ONLY: remove with apps/web/src/routes/lab
+  if (lab) return lab;
   const route = matchRoute(path);
   switch (route.name) {
     case "gifts":

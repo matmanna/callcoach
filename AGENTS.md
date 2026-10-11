@@ -30,7 +30,7 @@ The one-sentence angle: **nothing leaves the volunteer's device until a person h
 - DB: Postgres 16 (Docker locally, RDS only if time allows) with Drizzle.
 - AWS: Bedrock Converse API via `@aws-sdk/client-bedrock-runtime`; Comprehend optional.
 - Tests: Vitest.
-- Out of scope for the hackathon: Tauri, Rust, Python, Presidio, vector search, MongoDB, Cognito, Step Functions.
+- Out of scope for the hackathon: Rust (beyond generated Tauri files), Python, Presidio, vector search, MongoDB, Cognito, Step Functions. Tauri is allowed only under `apps/desktop` as a prototype shell.
 
 ## Repo layout
 

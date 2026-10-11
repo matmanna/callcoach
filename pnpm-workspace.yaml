@@ -3,3 +3,6 @@ packages:
   - packages/*
 allowBuilds:
   esbuild: true
+  # Node-only native runtime pulled in by @huggingface/transformers; the lab runs ONNX in the browser (onnxruntime-web).
+  onnxruntime-node: false
+  protobufjs: false
