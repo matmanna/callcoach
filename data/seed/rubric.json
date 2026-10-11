@@ -1,0 +1,19 @@
+{
+  "items": [
+    { "id": "thanked_by_name", "text": "Thanked the donor by name", "supporting_tags": [] },
+    { "id": "open_question", "text": "Asked one open question", "supporting_tags": ["PROGRAM_QUESTION"] },
+    {
+      "id": "acknowledged_loss",
+      "text": "Acknowledged a loss",
+      "supporting_tags": ["FAMILY_DECEASED_RECENT"],
+      "conditional_on_tag": "FAMILY_DECEASED_RECENT"
+    },
+    {
+      "id": "respected_limit",
+      "text": "Respected a stated limit",
+      "supporting_tags": ["STOP_CONTACT_REQUESTED", "EMAIL_PREFERRED"]
+    },
+    { "id": "no_ask", "text": "Made no ask in this call", "supporting_tags": [] },
+    { "id": "next_step", "text": "Closed with a next step", "supporting_tags": ["FOLLOW_UP_REQUESTED", "EMAIL_PREFERRED"] }
+  ]
+}

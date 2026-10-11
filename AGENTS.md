@@ -24,13 +24,14 @@ The one-sentence angle: **nothing leaves the volunteer's device until a person h
 
 - TypeScript, strict mode, everywhere. **No Python.** Do not add a language or a framework without asking.
 - pnpm workspaces. Node 20+.
-- Web: Vite, React, TypeScript.
+- Web: Vite, React, TypeScript, Tailwind, shadcn/ui (use its components; do not hand-roll what it provides), React Router.
 - API: Hono on Node locally; the same app is exported as a Lambda handler from `apps/api/src/lambda.ts`.
 - Validation: Zod. Schemas live in `packages/shared`.
-- DB: Postgres 16 (Docker locally, RDS only if time allows) with Drizzle.
+- DB: MongoDB (Atlas, or a local single-node replica set via Docker for dev) with the official `mongodb` driver.
+- Auth: Better Auth (email and password) with the MongoDB adapter, mounted at `/api/auth/*`. User type (`coordinator` | `volunteer`) lives on the user; team membership is separate.
 - AWS: Bedrock Converse API via `@aws-sdk/client-bedrock-runtime`; Comprehend optional.
 - Tests: Vitest.
-- Out of scope for the hackathon: Tauri, Rust, Python, Presidio, vector search, MongoDB, Cognito, Step Functions.
+- Out of scope for the hackathon: Tauri, Rust, Python, Presidio, vector search, Cognito, Step Functions.
 
 ## Repo layout
 
@@ -49,7 +50,7 @@ infra/             SAM template
 ```
 pnpm install
 docker compose up -d
-pnpm db:migrate && pnpm db:seed
+pnpm db:init && pnpm db:seed
 pnpm dev          # web :5173, api :8787, crm-stub :8788
 pnpm test
 pnpm typecheck
@@ -65,13 +66,14 @@ pnpm typecheck
 - **Idempotency.** Approve is keyed by `idempotency_key`. A repeat returns the stored result and does not call Bedrock or the CRM again.
 - **Failure is visible.** If Bedrock returns invalid JSON, store zero flags, set `flags_failed`, and show the coordinator an error. Never fail silently and never guess.
 - **Model output is untrusted.** Parse with Zod, drop labels outside the enum, truncate reasons to 160 characters.
-- **Audit log is append-only.** No update or delete routes. A database trigger enforces this.
+- **Audit log is append-only.** No update or delete routes. The application layer only exposes append and read for `audit_log`, and the app's MongoDB role has no update or delete privilege on that collection.
 
-## Database and migrations
+## Database
 
-- The initial migration (`0000`) creates every table, including `audit_log`, `rubric_results`, `warmth_ratings`, and `crm_writes`.
-- Do not create new tables for your feature. If you need a new column or index, add a new numbered migration after the latest one, keep it additive, and mention it in your report.
-- There is no transcript or raw-text column, and none may be added.
+- MongoDB documents, not migrations. Every collection has a TypeScript type and Zod schema in `packages/shared`. `pnpm db:init` creates collections, indexes, and the app role, and is safe to re-run.
+- Schema changes are tracked in the `schema_versions` collection: bump the version in `apps/api/src/db/init.ts`, keep changes additive (new optional fields, new indexes), and mention it in your report.
+- Repository functions take `org_id` as an explicit argument. Never query a tenant collection without it.
+- There is no transcript, raw-text, or audio field, and none may be added.
 
 ## Ownership (avoid merge conflicts)
 

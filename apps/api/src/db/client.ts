@@ -1,14 +1,19 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
-import * as schema from "./schema.ts";
+import { MongoClient, type Db } from "mongodb";
 
-export function databaseUrl(): string {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL is not set (see .env.example)");
-  return url;
+export interface Mongo {
+  client: MongoClient;
+  db: Db;
 }
 
-export function createDb(url = databaseUrl()) {
-  const pool = new pg.Pool({ connectionString: url });
-  return { db: drizzle(pool, { schema }), pool };
+export function mongoUri(env: NodeJS.ProcessEnv = process.env): string {
+  const uri = env.MONGODB_URI;
+  if (!uri) throw new Error("MONGODB_URI is not set (see .env.example)");
+  return uri;
+}
+
+/** Connects and returns the client plus the database named in the URI (default "stewardship"). */
+export async function connectMongo(uri = mongoUri(), dbName?: string): Promise<Mongo> {
+  const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
+  await client.connect();
+  return { client, db: client.db(dbName) };
 }

@@ -1,0 +1,11 @@
+external_id,first_name,last_name,spouse_name,employer,town,campaign,gift_band,past_gift_count,last_gift_band,limits,team_name
+d-102,Rosalind,Featherstone,Walter,Larkspur Valley Hospital,Millbrook,Spring Youth Appeal 2026,$100-$249,7,$100-$249,No phone calls during tax season (February to April),Student Callers
+d-201,Harriet,Penwarden,Clement,Stonebridge Library,Kestrel Falls,Spring Youth Appeal 2026,$50-$99,4,$50-$99,,Student Callers
+d-202,Desmond,Arkwright,Lorna,Halvorsen Freight,Pell Harbor,Spring Youth Appeal 2026,$250-$499,9,$250-$499,Mail only,Student Callers
+d-203,Imogen,Thackeray,Rafael,Corrigan and Webb,Ashby Cross,Spring Gala 2026,$500-$999,3,$250-$499,,Student Callers
+d-204,Beatrice,Kowalczyk,Henryk,Fernhill Elementary,Larchmont Mills,Spring Youth Appeal 2026,$100-$249,12,$100-$249,,Student Callers
+d-205,Clarence,Obuya,,Dunmore Rail Yard,Wexley,Spring Youth Appeal 2026,$100-$249,2,$50-$99,,Alumni Callers
+d-206,Winifred,Ashdown,Gerald,Marlow Textile Company,Brannock,Spring Youth Appeal 2026,$100-$249,6,$100-$249,Email only;No calls after 6pm,Alumni Callers
+d-207,Agnes,Merriweather,Frank,Tollgate Veterinary Clinic,Hollis Bend,Spring Youth Appeal 2026,$50-$99,1,$50-$99,,Alumni Callers
+d-208,Maureen,Talbot,,Riverside Credit Union,Ellery Point,Spring Youth Appeal 2026,$100-$249,15,$100-$249,,Alumni Callers
+d-209,Odessa,Pemberton,Lionel,Quayside Dental,Fallowmere,Spring Youth Appeal 2026,$250-$499,5,$250-$499,No home phone calls,Alumni Callers
