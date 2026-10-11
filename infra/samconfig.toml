@@ -16,6 +16,7 @@ fail_on_empty_changeset = false
 parameter_overrides = [
   "DomainName=callcoach.matmanna.dev",
   "SecretName=callcoach/prod",
+  "BedrockModelId=us.meta.llama3-3-70b-instruct-v1:0",
   "CertificateArn=arn:aws:acm:us-east-1:888195519464:certificate/4beeb763-be2c-43d5-b1b2-842a8564386b",
 ]
 
@@ -32,5 +33,6 @@ fail_on_empty_changeset = false
 parameter_overrides = [
   "DomainName=preview.callcoach.matmanna.dev",
   "SecretName=callcoach/preview",
+  "BedrockModelId=us.meta.llama3-3-70b-instruct-v1:0",
   "CertificateArn=arn:aws:acm:us-east-1:888195519464:certificate/4beeb763-be2c-43d5-b1b2-842a8564386b",
 ]

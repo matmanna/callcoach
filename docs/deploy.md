@@ -24,6 +24,12 @@ browser ──> CloudFront ──┬─ default: S3 (private, OAC) ─ the Vite 
 6. **Deploy the stack**, then add the Cloudflare CNAME `callcoach` -> the `DistributionDomain` output (DNS only, not proxied).
 7. **Initialise the database once:** `MONGODB_URI=<prod uri> pnpm db:init`. Do not run `db:seed` or `db:seed:demo` in production. Create the first coordinator through the sign-up page.
 
+## Bedrock
+
+- Region follows the stack (us-east-2). `BedrockModelId` is set in `infra/samconfig.toml`; the Lambda role may invoke any foundation model or inference profile.
+- Today `us.meta.llama3-3-70b-instruct-v1:0` works on this account. Anthropic models return `Model use case details have not been submitted` until the use-case form is submitted in the Bedrock console (Model catalog, Anthropic). Then switch to `us.anthropic.claude-haiku-4-5-20251001-v1:0`.
+- Bedrock only sees approved structured log fields (the warmth crosscheck). Notes never leave the device.
+
 ## Every deploy
 
 ```

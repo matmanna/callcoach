@@ -43,7 +43,7 @@ export async function overview(deps: Deps, scope: Scope) {
     }
 
   return {
-    suggested_note: "Suggested by model, needs review.",
+    suggested_note: "Flags are suggested by rules and need review. Model ratings, where shown, are suggestions too.",
     scope: { team_id: scope.teamId, team_count: scope.teamIds.length },
     calls_this_week: { completed: weekLogs.length, approved: weekLogs.filter((l) => l.status === "approved").length, pending_approval: weekLogs.filter((l) => l.status === "draft").length },
     queue: { open: flags.length, by_label: byLabel, oldest_age_hours: oldest ? Math.floor((now.getTime() - oldest.getTime()) / 3_600_000) : null },

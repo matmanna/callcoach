@@ -92,7 +92,7 @@ export async function listQueue(deps: Deps, scope: Scope) {
   const donors = await collections(deps.db).donors.find({ _id: { $in: ordered.map((f) => f.donor_id) } }, { projection: { external_id: 1 } }).toArray();
   const ext = new Map(donors.map((d) => [d._id, d.external_id]));
   return {
-    note: "Suggested by model, needs review.",
+    note: "Suggested by rules, needs review.",
     items: ordered.map((f) => ({
       id: f._id,
       label: f.label,

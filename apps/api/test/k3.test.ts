@@ -264,7 +264,7 @@ describe("coordinator queue", () => {
   });
   it("lists proposed flags with the model note, oldest red first", async () => {
     const q = (await coord.get("/api/queue")).json;
-    expect(q.note).toBe("Suggested by model, needs review.");
+    expect(q.note).toBe("Suggested by rules, needs review.");
     expect(q.items.map((i: { label: string }) => i.label)).toEqual(["DISTRESS", "STOP_CONTACT", "OFF_SCRIPT_CLAIM"]);
     expect(q.items.every((i: { red: boolean }) => i.red)).toBe(true);
   });
@@ -483,7 +483,7 @@ describe("rubrics, knowledge, handoffs, patterns, audit", () => {
 describe("overview", () => {
   it("returns operational counts that match seeded data, without the word score", async () => {
     const o = (await coord.get("/api/dashboard/overview")).json;
-    expect(o.suggested_note).toBe("Suggested by model, needs review.");
+    expect(o.suggested_note).toMatch(/suggested by rules/i);
     expect(o.calls_this_week).toEqual({ completed: expect.any(Number), approved: expect.any(Number), pending_approval: expect.any(Number) });
     expect(o.queue.open).toBe(await p2(h.deps.db).flags.countDocuments({ org_id: orgId, status: "proposed" }));
     expect(o.follow_ups.open).toBe(await p2(h.deps.db).follow_ups.countDocuments({ org_id: orgId, status: "open" }));

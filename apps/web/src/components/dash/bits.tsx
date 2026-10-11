@@ -37,8 +37,8 @@ export function LoadState({ loading, error, children }: { loading: boolean; erro
   return <>{children}</>;
 }
 
-export function ModelNote() {
-  return <Badge variant="outline">Suggested by model, needs review</Badge>;
+export function ModelNote({ source = "rules" }: { source?: "rules" | "model" }) {
+  return <Badge variant="outline">Suggested by {source}, needs review</Badge>;
 }
 
 export function Pager({ total, cursor, limit, onChange }: { total: number; cursor: number; limit: number; onChange: (cursor: number) => void }) {

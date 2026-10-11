@@ -219,7 +219,7 @@ export function InsightsPage() {
   return (
     <>
       <PageHeader title="Patterns" description="Charts compare segments and time, never people. Counts under 5 are suppressed. This describes calls and follow-ups only." />
-      <Alert className="mb-3"><AlertDescription>Model-suggested items are marked "Suggested by model, needs review".</AlertDescription></Alert>
+      <Alert className="mb-3"><AlertDescription>Flags are suggested by rules and model ratings by a model. Both are marked "needs review".</AlertDescription></Alert>
       <div className="mb-3 flex flex-wrap items-end gap-3">
         <label className="text-xs text-muted-foreground">From<Input type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
         <label className="text-xs text-muted-foreground">To<Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} /></label>

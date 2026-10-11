@@ -54,7 +54,7 @@ export function QueuePage() {
             {q.data?.items.map((i) => (
               <TableRow key={i.id}>
                 <TableCell><Badge variant={i.red ? "destructive" : "outline"}>{i.label.replace("_", " ")}</Badge></TableCell>
-                <TableCell>{i.reason}<div className="text-xs text-muted-foreground">Suggested by model, needs review.</div></TableCell>
+                <TableCell>{i.reason}<div className="text-xs text-muted-foreground">Suggested by rules, needs review.</div></TableCell>
                 <TableCell><Link className="underline" to={scope.link(`/coordinator/calls/${i.log_id}`)}>View log</Link></TableCell>
                 <TableCell><Link className="underline" to={scope.link(`/coordinator/contacts/${i.donor_id}`)}>{i.donor_ref}</Link></TableCell>
                 <TableCell>{i.age_hours} h</TableCell>

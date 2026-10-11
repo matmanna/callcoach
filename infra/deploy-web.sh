@@ -20,6 +20,8 @@ trap '[ $? -eq 0 ] || infra/gh-deploy.sh finish "$ENV_NAME" "$URL" "$DEPLOY_ID" 
 if [ -n "${WEB_DIST:-}" ]; then
   DIST_DIR="$WEB_DIST"
 else
+  # The call flow runs Whisper and NER on the device from same-origin files (no CDN), so ship them.
+  pnpm models:fetch
   pnpm --filter @sc/web build
   DIST_DIR="apps/web/dist"
 fi
