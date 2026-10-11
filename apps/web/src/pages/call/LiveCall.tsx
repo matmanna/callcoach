@@ -10,7 +10,7 @@ import { LocalAudioCapture } from "@/lib/localAi/audioCapture";
 import { redactTurnAsync } from "@/lib/localAi/asyncRedactor";
 import { loadNer, runNer } from "@/lib/localAi/ner";
 import { loadSpeechModel, transcribeLocal } from "@/lib/localAi/speech";
-import { detectSpeaker, voiceProfileFromAudio, type SpeakerDetection, type VoiceProfile } from "@/lib/localAi/speakerDetection";
+import { TwoVoiceDiarizer, voiceProfileFromAudio, type SpeakerDetection } from "@/lib/localAi/speakerDetection";
 import { buildKnownIdentifiers, draftFromNote, redactionCounts } from "@sc/rules";
 import { CueRulesFile, LogRulesFile, PhraseRulesFile, type Donor, type DonorDoc, type RawTurn, type Turn } from "@sc/shared";
 import cueRaw from "../../../../../data/cue-rules.json";
@@ -66,7 +66,7 @@ export function LiveCall() {
   const speakerRef = useRef<RawTurn["speaker"]>("donor");
   const autoDetectSpeakerRef = useRef(true);
   const calibratingSpeakerRef = useRef(false);
-  const volunteerVoiceProfile = useRef<VoiceProfile | null>(null);
+  const diarizer = useRef<TwoVoiceDiarizer | null>(null);
   const startedAt = useRef(0);
 
   useEffect(() => {
@@ -116,15 +116,15 @@ export function LiveCall() {
           if (calibratingSpeakerRef.current) {
             const profile = voiceProfileFromAudio(audio);
             if (profile) {
-              volunteerVoiceProfile.current = profile;
+              diarizer.current = new TwoVoiceDiarizer(profile);
               calibratingSpeakerRef.current = false;
               setCalibratingSpeaker(false);
               setSpeakerProfileReady(true);
               setLastDetection(null);
             }
           }
-          const detection = volunteerVoiceProfile.current && autoDetectSpeakerRef.current
-            ? detectSpeaker(audio, volunteerVoiceProfile.current)
+          const detection = diarizer.current && autoDetectSpeakerRef.current
+            ? diarizer.current.detect(audio)
             : null;
           if (detection) setLastDetection(detection);
           const text = await transcribeLocal(audio);
@@ -175,7 +175,7 @@ export function LiveCall() {
         nerBackend: backend,
       });
     }
-    volunteerVoiceProfile.current = null;
+    diarizer.current = null;
     calibratingSpeakerRef.current = false;
     navigate(`/call/${donorId}/post?log=${logId}`);
   };
@@ -198,7 +198,7 @@ export function LiveCall() {
       <Card>
         <CardHeader>
           <CardTitle>Local listening AI</CardTitle>
-          <CardDescription>Prepare the bundled Whisper and NER models before listening. Speaker labels are detected locally after you calibrate your voice.</CardDescription>
+          <CardDescription>Prepare the bundled Whisper and NER models before listening. Local diarization separates two voices after you calibrate yours.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -220,7 +220,7 @@ export function LiveCall() {
           <div className="rounded-lg border p-3 text-sm space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <strong>Local speaker detection</strong>
-              {speakerProfileReady ? <Badge variant="secondary">Volunteer voice calibrated</Badge> : <Badge variant="outline">Manual labels</Badge>}
+              {speakerProfileReady ? <Badge variant="secondary">Two-voice detection ready</Badge> : <Badge variant="outline">Manual labels</Badge>}
               <Button size="sm" variant="outline" onClick={calibrateVolunteerVoice} disabled={!listening || calibratingSpeaker}>
                 {calibratingSpeaker ? "Listening for your voice…" : "Calibrate my voice"}
               </Button>
@@ -228,8 +228,8 @@ export function LiveCall() {
                 Auto detection: {autoDetectSpeaker ? "on" : "off"}
               </Button>
             </div>
-            <p className="text-muted-foreground">With the call on speaker, press Calibrate my voice and speak for one segment. Labels are suggestions from this microphone only; use Current speaker to override them. No voice profile, audio, or raw text leaves this device.</p>
-            {lastDetection?.voiced ? <p className="text-muted-foreground">Latest local label: likely {lastDetection.speaker} ({Math.round(lastDetection.confidence * 100)}% match confidence).</p> : null}
+            <p className="text-muted-foreground">With the call on speaker, press Calibrate my voice and speak for one segment. Two matching segments from a clearly different voice establish the other speaker. Labels are suggestions from this microphone only; use Current speaker to override them. No voice profile, audio, or raw text leaves this device.</p>
+            {lastDetection?.voiced ? <p className="text-muted-foreground">Latest local label: likely {lastDetection.speaker} ({Math.round(lastDetection.confidence * 100)}% match confidence){lastDetection.learnedOtherVoice ? "; two voices learned" : ""}.</p> : null}
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           {held ? <p className="text-sm text-destructive">{held} segment(s) held because local NER did not complete.</p> : null}
