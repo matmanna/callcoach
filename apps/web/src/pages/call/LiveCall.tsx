@@ -10,7 +10,7 @@ import { LocalAudioCapture } from "@/lib/localAi/audioCapture";
 import { redactTurnAsync } from "@/lib/localAi/asyncRedactor";
 import { loadNer, runNer } from "@/lib/localAi/ner";
 import { loadSpeechModel, transcribeLocal } from "@/lib/localAi/speech";
-import { detectSpeaker, voiceProfileFromAudio, type SpeakerDetection, type VoiceProfile } from "@/lib/localAi/speakerDetection";
+import { CALIBRATION_SEGMENTS, detectSpeaker, mergeVoiceProfiles, smoothSpeakerLabel, voiceProfileFromAudio, type DetectedSpeaker, type SpeakerDetection, type VoiceProfile } from "@/lib/localAi/speakerDetection";
 import { buildKnownIdentifiers, draftFromNote, redactionCounts } from "@sc/rules";
 import { CueRulesFile, LogRulesFile, PhraseRulesFile, type Donor, type DonorDoc, type RawTurn, type Turn } from "@sc/shared";
 import cueRaw from "../../../../../data/cue-rules.json";
@@ -67,6 +67,9 @@ export function LiveCall() {
   const autoDetectSpeakerRef = useRef(true);
   const calibratingSpeakerRef = useRef(false);
   const volunteerVoiceProfile = useRef<VoiceProfile | null>(null);
+  const calibrationSamples = useRef<VoiceProfile[]>([]);
+  const recentLabels = useRef<DetectedSpeaker[]>([]);
+  const [calibrationCount, setCalibrationCount] = useState(0);
   const startedAt = useRef(0);
 
   useEffect(() => {
@@ -109,23 +112,32 @@ export function LiveCall() {
       capture.current = await LocalAudioCapture.start(async (audio) => {
         setProcessing(true);
         try {
+          // Calibration needs several voiced segments, so the profile is not built from one noisy clip.
           if (calibratingSpeakerRef.current) {
             const profile = voiceProfileFromAudio(audio);
             if (profile) {
-              volunteerVoiceProfile.current = profile;
-              calibratingSpeakerRef.current = false;
-              setCalibratingSpeaker(false);
-              setSpeakerProfileReady(true);
-              setLastDetection(null);
+              calibrationSamples.current = [...calibrationSamples.current, profile];
+              setCalibrationCount(calibrationSamples.current.length);
+              if (calibrationSamples.current.length >= CALIBRATION_SEGMENTS) {
+                volunteerVoiceProfile.current = mergeVoiceProfiles(calibrationSamples.current);
+                calibrationSamples.current = [];
+                calibratingSpeakerRef.current = false;
+                setCalibratingSpeaker(false);
+                setSpeakerProfileReady(true);
+                setLastDetection(null);
+              }
             }
           }
-          const detection = volunteerVoiceProfile.current && autoDetectSpeakerRef.current
+          const detection = volunteerVoiceProfile.current && autoDetectSpeakerRef.current && !calibratingSpeakerRef.current
             ? detectSpeaker(audio, volunteerVoiceProfile.current)
             : null;
           if (detection) setLastDetection(detection);
+          // A label is used only after it agrees with recent voiced segments, so one noisy clip does not flip it.
+          if (detection?.voiced) recentLabels.current = [...recentLabels.current.slice(-4), detection.speaker];
           const text = await transcribeLocal(audio);
           if (!text) return;
-          const detectedSpeaker = detection?.speaker === "unknown" ? null : detection?.speaker;
+          const smoothed = detection && detection.speaker !== "unknown" ? smoothSpeakerLabel(recentLabels.current) : "unknown";
+          const detectedSpeaker = smoothed === "unknown" ? null : smoothed;
           const raw: RawTurn = { id: crypto.randomUUID(), speaker: detectedSpeaker ?? speakerRef.current, raw: text, t: Date.now() - startedAt.current };
           const result = await redactTurnAsync(raw, { known, phraseRules, ner: { enabled: true, run: runNer } });
           if (result.status === "held") {
@@ -152,6 +164,9 @@ export function LiveCall() {
   };
 
   const calibrateVolunteerVoice = () => {
+    calibrationSamples.current = [];
+    recentLabels.current = [];
+    setCalibrationCount(0);
     calibratingSpeakerRef.current = true;
     setCalibratingSpeaker(true);
     setLastDetection(null);
@@ -172,6 +187,8 @@ export function LiveCall() {
       });
     }
     volunteerVoiceProfile.current = null;
+    calibrationSamples.current = [];
+    recentLabels.current = [];
     calibratingSpeakerRef.current = false;
     navigate(`/call/${donorId}/post?log=${logId}`);
   };
@@ -218,13 +235,13 @@ export function LiveCall() {
               <strong>Local speaker detection</strong>
               {speakerProfileReady ? <Badge variant="secondary">Volunteer voice calibrated</Badge> : <Badge variant="outline">Manual labels</Badge>}
               <Button size="sm" variant="outline" onClick={calibrateVolunteerVoice} disabled={!listening || calibratingSpeaker}>
-                {calibratingSpeaker ? "Listening for your voice…" : "Calibrate my voice"}
+                {calibratingSpeaker ? `Speak for a moment… (${calibrationCount} of ${CALIBRATION_SEGMENTS})` : "Calibrate my voice"}
               </Button>
               <Button size="sm" variant={autoDetectSpeaker ? "secondary" : "outline"} onClick={() => setAutoDetectSpeaker((enabled) => !enabled)} disabled={!speakerProfileReady}>
                 Auto detection: {autoDetectSpeaker ? "on" : "off"}
               </Button>
             </div>
-            <p className="text-muted-foreground">With the call on speaker, press Calibrate my voice and speak for one segment. Labels are suggestions from this microphone only; use Current speaker to override them. No voice profile, audio, or raw text leaves this device.</p>
+            <p className="text-muted-foreground">With the call on speaker, press Calibrate my voice and speak for three short segments, one sentence each. Labels are suggestions from this microphone only; use Current speaker to override them. No voice profile, audio, or raw text leaves this device.</p>
             {lastDetection?.voiced ? <p className="text-muted-foreground">Latest local label: likely {lastDetection.speaker} ({Math.round(lastDetection.confidence * 100)}% match confidence).</p> : null}
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
