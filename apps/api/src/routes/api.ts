@@ -8,6 +8,7 @@ import {
   OrgProfileUpdate,
   RubricUpdate,
   SeedKind,
+  ServiceScope,
   UpdateProfile,
   UpdateTeam,
   UserType,
@@ -18,7 +19,7 @@ import { z } from "zod";
 import { loadAccess, requireCoordinator, requireOrg, requireRole, type Access, type SessionUser } from "../auth/access.ts";
 import { appendAudit } from "../db/audit.ts";
 import { collections } from "../db/collections.ts";
-import { jsonBody, notFound, parseBody } from "../http.ts";
+import { HttpError, jsonBody, notFound, parseBody } from "../http.ts";
 import { toCsv } from "../imports/csv.ts";
 import { ImportRequest, commitImport, previewImport } from "../imports/importer.ts";
 import type { Deps } from "../services/context.ts";
@@ -43,10 +44,11 @@ const PUBLIC_PATHS = new Set(["/invites/lookup", "/invites/accept"]);
 export async function sessionUser(deps: Deps, headers: Headers): Promise<SessionUser | null> {
   const s = await deps.auth.api.getSession({ headers });
   if (!s) return null;
-  const u = s.user as typeof s.user & { user_type?: unknown; display_name?: string | null; timezone?: string | null };
+  const u = s.user as typeof s.user & { user_type?: unknown; display_name?: string | null; timezone?: string | null; service_scope?: unknown; home_region?: string | null };
   const type = UserType.safeParse(u.user_type);
   if (!type.success) return null;
-  return { id: u.id, email: u.email, name: u.name, user_type: type.data, display_name: u.display_name ?? null, timezone: u.timezone ?? null };
+  const scope = ServiceScope.safeParse(u.service_scope);
+  return { id: u.id, email: u.email, name: u.name, user_type: type.data, display_name: u.display_name ?? null, timezone: u.timezone ?? null, service_scope: scope.success ? scope.data : null, home_region: u.home_region ?? null };
 }
 
 export function apiRoutes(deps: Deps) {
@@ -122,9 +124,18 @@ export function apiRoutes(deps: Deps) {
   api.patch("/me", async (c) => {
     const user = c.get("access").user;
     const body = parseBody(UpdateProfile, await jsonBody(c));
-    const set: Record<string, string> = {};
+    const set: Record<string, unknown> = {};
     if (body.display_name) set.display_name = set.name = body.display_name;
     if (body.timezone) set.timezone = body.timezone;
+    // Validate the scope and region the user will have after this save, not just the fields sent.
+    const current = await collections(deps.db).users.findOne({ _id: toUserKey(user.id) }, { projection: { service_scope: 1, home_region: 1 } });
+    const scope = body.service_scope ?? current?.service_scope ?? null;
+    const region = body.home_region !== undefined ? body.home_region : (current?.home_region ?? null);
+    if (scope === "local" && !region) throw new HttpError(400, "invalid_payload", { issues: [{ path: "home_region", code: "required", message: "a local volunteer needs a home region" }] });
+    if (body.service_scope) set.service_scope = body.service_scope;
+    // A region only means something for local volunteers. Clear it when the scope widens.
+    if (body.service_scope && body.service_scope !== "local") set.home_region = null;
+    else if (body.home_region !== undefined) set.home_region = body.home_region;
     await collections(deps.db).users.updateOne({ _id: toUserKey(user.id) }, { $set: set });
     return c.json({ ok: true });
   });

@@ -20,14 +20,22 @@ interface Res {
 /** Region-level only. No pins, no street-level points, and no coordinates are stored for donors. */
 export function GeographyPage() {
   const scope = useTeamScope();
-  const [level, setLevel] = useState("region");
-  const { data, error, loading } = useApi<Res>(withQuery("/insights/map", `level=${level}`, scope.q));
+  // Unset until the coordinator picks one: the server then uses the default from volunteers' service scope.
+  const [chosen, setChosen] = useState<string | null>(null);
+  const { data, error, loading } = useApi<Res & { suggested_level: string; scope_mix: Record<"local" | "national" | "global" | "unset", Cell> }>(withQuery("/insights/map", chosen ? `level=${chosen}` : "", scope.q));
+  const level = data?.level ?? "region";
   return (
     <>
-      <PageHeader title="Geography" description="Donors called and follow-ups, by region. Regions with fewer than 5 are suppressed." actions={<Select value={level} onValueChange={setLevel}><SelectTrigger className="w-40" aria-label="Level"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="region">State or region</SelectItem><SelectItem value="country">Country</SelectItem></SelectContent></Select>} />
+      <PageHeader title="Geography" description="Donors called and follow-ups, by region. Regions with fewer than 5 are suppressed." actions={<Select value={level} onValueChange={setChosen}><SelectTrigger className="w-40" aria-label="Level"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="region">State or region</SelectItem><SelectItem value="country">Country</SelectItem></SelectContent></Select>} />
       <LoadState loading={loading} error={error}>
         {data ? (
           <div className="space-y-4">
+            {data.scope_mix ? (
+              <p className="text-sm text-muted-foreground">
+                {chosen ? "Level chosen here." : `Default: ${data.suggested_level === "region" ? "state or region" : "country"}, from volunteers' service scope`}
+                {" · "}local <CellText cell={data.scope_mix.local} />, national <CellText cell={data.scope_mix.national} />, global <CellText cell={data.scope_mix.global} />, not yet answered <CellText cell={data.scope_mix.unset} />.
+              </p>
+            ) : null}
             <Card>
               <CardHeader><CardTitle>Regional table</CardTitle><CardDescription>Donors called and follow-ups created, by {level === "country" ? "country" : "state or region"}.</CardDescription></CardHeader>
               <CardContent className="space-y-3">

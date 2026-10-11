@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AuthCard, type Accent } from "./AuthCard.tsx";
+import { ServiceScopeStep } from "./ServiceScopeStep.tsx";
 import { ArrowRight, Building2, Check, FileUp, Hand, type LucideIcon, SkipForward, SlidersHorizontal, UserPlus, UsersRound } from "lucide-react";
 import rubricRaw from "../../../../../data/rubric.json";
 
@@ -156,7 +157,7 @@ export function Onboarding() {
     );
 
   if (me.user.user_type !== "coordinator") {
-    if (me.org) return <Navigate to="/home" replace />;
+    if (me.org) return me.user.service_scope ? <Navigate to="/home" replace /> : <ServiceScopeStep />;
     // A volunteer with no organization: enter the join code from the coordinator.
     return (
       <AuthCard title="Join your team" description="Enter the join code your coordinator shared with you. It looks like XXXX-XXXX." accent={JOIN_ACCENT}>

@@ -41,6 +41,9 @@ export interface AuthUserDoc {
   user_type: "coordinator" | "volunteer";
   display_name?: string | null;
   timezone?: string | null;
+  /** Where the volunteer usually calls. Asked during volunteer onboarding. */
+  service_scope?: "local" | "national" | "global" | null;
+  home_region?: string | null;
   createdAt: Date;
 }
 

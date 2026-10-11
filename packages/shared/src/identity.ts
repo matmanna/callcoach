@@ -231,7 +231,19 @@ export const AcceptInvite = z.strictObject({
   timezone: Timezone.optional(),
 });
 export const ChangeMemberRole = z.strictObject({ role: TeamRole });
-export const UpdateProfile = z.strictObject({ display_name: name.optional(), timezone: Timezone.optional() });
+/** Where a volunteer usually calls: their own state or province, the whole country, or anywhere. */
+export const ServiceScope = z.enum(["local", "national", "global"]);
+export type ServiceScope = z.infer<typeof ServiceScope>;
+
+/** ISO 3166-2 style region code used across donors: US-PA, CA-ON, GB-ENG. */
+export const RegionCode = z.string().trim().regex(/^[A-Z]{2}-[A-Z0-9]{1,3}$/, "expected a region code such as US-PA");
+
+export const UpdateProfile = z.strictObject({
+  display_name: name.optional(),
+  timezone: Timezone.optional(),
+  service_scope: ServiceScope.optional(),
+  home_region: RegionCode.nullable().optional(),
+});
 
 /** Columns the importer refuses outright: raw call content never enters the system. */
 export const FORBIDDEN_IMPORT_COLUMN = /transcript|audio|notes?_raw/i;

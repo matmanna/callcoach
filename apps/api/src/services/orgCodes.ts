@@ -11,7 +11,7 @@ import { appendAudit } from "../db/audit.ts";
 import { collections } from "../db/collections.ts";
 import { withTx } from "../db/tx.ts";
 import { HttpError, notFound } from "../http.ts";
-import { hashToken } from "./invites.ts";
+import { ensureTeamCallList, hashToken } from "./invites.ts";
 import { nowOf, type Deps } from "./context.ts";
 
 // No 0, O, 1, I, or L: easy to misread when read aloud.
@@ -66,5 +66,7 @@ export async function joinWithCode(deps: Deps, user: { id: string; user_type: st
     await c.memberships.insertOne({ _id: randomUUID(), org_id: org._id, user_id: user.id, team_id: root._id, role: "caller", status: "active", joined_at: now }, { session });
     await appendAudit(deps.db, { org_id: org._id, who: user.id, action: "org.join_code.join", target_type: "team", target_id: root._id }, session);
   });
+  // Same call list an invited volunteer gets, so the Calls page has donors straight away.
+  await ensureTeamCallList(deps, { org_id: org._id, team_id: root._id }, user.id);
   return { org_id: org._id, team_id: root._id };
 }

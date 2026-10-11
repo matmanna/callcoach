@@ -245,6 +245,22 @@ export async function chart(deps: Deps, scope: Scope, kind: ChartKind, from?: st
 
 const country = (region: string) => region.split("-")[0]!;
 
+/**
+ * Default map level from the service scope of the volunteers on the teams in scope. Mostly local
+ * volunteers: show regions. Otherwise: countries. Scope counts are shown only at MIN_CELL or more.
+ */
+export async function suggestedMapLevel(deps: Deps, scope: Scope): Promise<{ level: "region" | "country"; scope_mix: Record<"local" | "national" | "global" | "unset", Cell> }> {
+  const c = collections(deps.db);
+  const members = await c.memberships.find({ org_id: scope.orgId, team_id: { $in: scope.teamIds }, status: "active", role: "caller" }, { projection: { user_id: 1 } }).toArray();
+  const userIds = [...new Set(members.map((m) => m.user_id))];
+  const users = userIds.length ? await c.users.find({ _id: { $in: userIds.map(toUserKey) } }, { projection: { service_scope: 1 } }).toArray() : [];
+  const count = (k: "local" | "national" | "global" | "unset") => users.filter((u) => (u.service_scope ?? "unset") === k).length;
+  const mix = { local: count("local"), national: count("national"), global: count("global"), unset: count("unset") };
+  const scopeMix = { local: cell(mix.local), national: cell(mix.national), global: cell(mix.global), unset: cell(mix.unset) };
+  const wide = mix.national + mix.global;
+  return { level: mix.local > wide ? "region" : "country", scope_mix: scopeMix };
+}
+
 export async function map(deps: Deps, scope: Scope, level: "region" | "country", from?: string, to?: string) {
   const ctx = await context(deps, scope, from, to);
   const px = p2(deps.db);

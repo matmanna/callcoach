@@ -23,6 +23,8 @@ export function createAuth(db: Db, client: MongoClient, env: AuthEnv) {
         user_type: { type: "string", required: true, input: true },
         display_name: { type: "string", required: false, input: true },
         timezone: { type: "string", required: false, input: true },
+        service_scope: { type: "string", required: false, input: true },
+        home_region: { type: "string", required: false, input: true },
       },
     },
     advanced: { defaultCookieAttributes: { httpOnly: true, sameSite: "lax" } },
