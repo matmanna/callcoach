@@ -11,11 +11,16 @@
     "test": "vitest run",
     "typecheck": "pnpm -r --parallel typecheck",
     "db:seed": "pnpm --filter @sc/api db:seed",
-    "db:init": "pnpm --filter @sc/api db:init"
+    "db:init": "pnpm --filter @sc/api db:init",
+    "infra:build": "node infra/build-api.mjs",
+    "infra:validate": "sam validate --lint --template-file infra/template.yaml",
+    "infra:deploy": "pnpm infra:build && sam deploy --config-file infra/samconfig.toml --template-file infra/template.yaml",
+    "deploy:web": "infra/deploy-web.sh"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "concurrently": "^10.0.6",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^5.9.0",
     "vitest": "^5.0.3"

@@ -7,3 +7,4 @@ dist/
 # Local AI model files from the lab branch (pnpm models:fetch)
 apps/web/public/models/
 apps/web/public/ort/
+infra/build/

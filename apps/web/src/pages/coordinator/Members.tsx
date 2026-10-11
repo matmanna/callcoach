@@ -148,8 +148,11 @@ export function Members() {
             <Button
               onClick={async () => {
                 try {
-                  await api(`/teams/${teamId}/invites`, { body: invite });
-                  toast.success(`Invite sent to ${invite.email}`);
+                  const r = await api<{ link?: string }>(`/teams/${teamId}/invites`, { body: invite });
+                  if (r.link) {
+                    await navigator.clipboard?.writeText(r.link).catch(() => undefined);
+                    toast.success(`Invite link for ${invite.email} copied. Send it to them directly.`, { description: r.link, duration: 20000 });
+                  } else toast.success(`Invite sent to ${invite.email}`);
                   setInviteOpen(false);
                 } catch (err) {
                   setError(errorMessage(err));

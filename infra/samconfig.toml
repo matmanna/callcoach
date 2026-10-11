@@ -1,0 +1,12 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "callcoach"
+region = "us-east-1"
+
+[default.deploy.parameters]
+template_file = "template.yaml"
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true
+confirm_changeset = true
+fail_on_empty_changeset = false

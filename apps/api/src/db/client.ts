@@ -13,7 +13,7 @@ export function mongoUri(env: NodeJS.ProcessEnv = process.env): string {
 
 /** Connects and returns the client plus the database named in the URI (default "stewardship"). */
 export async function connectMongo(uri = mongoUri(), dbName?: string): Promise<Mongo> {
-  const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
+  const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000, maxPoolSize: Number(process.env.MONGO_MAX_POOL ?? 10) || 10 });
   await client.connect();
   return { client, db: client.db(dbName) };
 }
