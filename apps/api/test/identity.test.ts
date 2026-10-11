@@ -133,6 +133,16 @@ describe("invites", () => {
     expect(docs[0]!.token_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 
+  it("lets an invited signed-in user accept from onboarding without the link token", async () => {
+    const direct = new Client(h);
+    expect((await direct.post("/api/auth/sign-up/email", { email: "onboarding@example.org", password: "coordinator-pass-123", name: "Onboarding", user_type: "coordinator" })).status).toBe(200);
+    const invite = await coord.post(`/api/teams/${teamB}/invites`, { email: "onboarding@example.org", role: "caller" });
+    const me = await direct.get("/api/me");
+    expect(me.json.pending_invites).toEqual([expect.objectContaining({ id: invite.json.invite._id, team_name: "Alumni Callers" })]);
+    expect((await direct.post(`/api/onboarding/invites/${invite.json.invite._id}/accept`, {})).status).toBe(200);
+    expect((await direct.get("/api/me")).json.teams.map((team: { _id: string }) => team._id)).toContain(teamB);
+  });
+
   it("reused token: second accept returns 410 already_used and changes nothing", async () => {
     const { token } = await inviteAndAccept(h, coord, teamB, "twice@example.org");
     const again = await new Client(h).post("/api/invites/accept", { token, password: "volunteer-pass-123", display_name: "V", timezone: "UTC" });

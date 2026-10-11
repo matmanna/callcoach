@@ -13,6 +13,7 @@ export interface Me {
   user: { id: string; email: string; name: string; user_type: UserType; display_name: string | null; timezone: string | null };
   org: { id: string; name: string; slug: string } | null;
   onboarding_required: boolean;
+  pending_invites: Array<{ id: string; role: TeamRole; team_name: string; team_focus: string; org_name: string }>;
   teams: TeamNode[];
 }
 

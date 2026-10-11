@@ -124,7 +124,7 @@ export function Members() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Invite to {flattenTeams(me?.teams ?? []).find((t) => t._id === teamId)?.name}</DialogTitle>
-            <DialogDescription>Create a private invite link to share with this person.</DialogDescription>
+            <DialogDescription>Create an invitation for this email. Existing users can sign in and accept it from onboarding; the private link is also available for new-account setup.</DialogDescription>
           </DialogHeader>
           <FieldGroup>
             <Field>

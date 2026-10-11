@@ -13,7 +13,7 @@ export function AppLayout() {
   const location = useLocation();
   if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
   if (!me) return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />;
-  if (me.onboarding_required && location.pathname !== "/onboarding") return <Navigate to="/onboarding" replace />;
+  if ((me.onboarding_required || me.pending_invites.length > 0) && location.pathname !== "/onboarding") return <Navigate to="/onboarding" replace />;
   const coord = isCoordinator(me);
   return (
     <div className="min-h-screen bg-background">

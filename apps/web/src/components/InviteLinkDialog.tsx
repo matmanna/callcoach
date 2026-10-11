@@ -30,7 +30,7 @@ export function InviteLinkDialog({ open, onOpenChange, email, link }: InviteLink
         </DialogHeader>
         <Alert>
           <AlertTitle>Copy this link now</AlertTitle>
-          <AlertDescription>The raw invite token is not stored and cannot be shown again. Generating another link invalidates this one.</AlertDescription>
+          <AlertDescription>This link is optional for people who already have an account: signing in with {email} takes them to onboarding. The raw token is not stored and cannot be shown again. Generating another link invalidates this one.</AlertDescription>
         </Alert>
         <Input aria-label="Invite link" readOnly value={link} onFocus={(event) => event.currentTarget.select()} />
         <DialogFooter>

@@ -20,7 +20,7 @@ import { jsonBody, notFound, parseBody } from "../http.ts";
 import { toCsv } from "../imports/csv.ts";
 import { ImportRequest, commitImport, previewImport } from "../imports/importer.ts";
 import type { Deps } from "../services/context.ts";
-import { acceptInvite, createInvite, listInvites, lookupInvite, resendInvite, revokeInvite } from "../services/invites.ts";
+import { acceptInvite, acceptPendingInvite, createInvite, listInvites, listPendingInvitesForEmail, lookupInvite, resendInvite, revokeInvite } from "../services/invites.ts";
 import { onboardCoordinator, toUserKey } from "../services/orgs.ts";
 import { archiveTeam, changeMemberRole, createTeam, listMembers, removeMember, teamTree, updateTeam } from "../services/teams.ts";
 import { postCallRoutes } from "./postcall.ts";
@@ -61,6 +61,7 @@ export function apiRoutes(deps: Deps) {
       user: access.user,
       org: org ? { id: org._id, name: org.name, slug: org.slug } : null,
       onboarding_required: !access.orgId,
+      pending_invites: await listPendingInvitesForEmail(deps, access.user.email),
       teams: teamTree(access),
     });
   });
@@ -79,6 +80,13 @@ export function apiRoutes(deps: Deps) {
     const body = parseBody(CoordinatorOnboarding, await jsonBody(c));
     const { org, rootTeam } = await onboardCoordinator(deps, c.get("access").user, body);
     return c.json({ org, root_team: rootTeam }, 201);
+  });
+
+  api.post("/onboarding/invites/:id/accept", async (c) => {
+    const user = c.get("user");
+    if (!user) throw new Error("authenticated route missing session user");
+    parseBody(z.strictObject({}), await jsonBody(c));
+    return c.json({ ok: true, ...(await acceptPendingInvite(deps, c.req.param("id"), { id: user.id, email: user.email })) });
   });
 
   // ---------- teams ----------

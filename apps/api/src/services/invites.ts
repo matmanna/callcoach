@@ -15,6 +15,14 @@ const newToken = () => randomBytes(32).toString("base64url");
 
 export type InviteState = "pending" | "accepted" | "expired" | "revoked";
 
+export interface PendingInviteSummary {
+  id: string;
+  role: TeamRole;
+  team_name: string;
+  team_focus: string;
+  org_name: string;
+}
+
 export function inviteState(inv: InviteDoc, now: Date): InviteState {
   if (inv.accepted_at) return "accepted";
   if (inv.revoked_at) return "revoked";
@@ -90,6 +98,34 @@ export async function listInvites(deps: Deps, access: Access, orgId: string) {
   return invs.map(({ token_hash: _omit, ...rest }) => ({ ...rest, state: inviteState(rest as InviteDoc, now), team_name: access.teams.get(rest.team_id)?.name ?? "" }));
 }
 
+/** Pending invitations for the currently signed-in email. No raw token is returned. */
+export async function listPendingInvitesForEmail(deps: Deps, email: string): Promise<PendingInviteSummary[]> {
+  const c = collections(deps.db);
+  const now = nowOf(deps);
+  const invites = await c.invites
+    .find({ email: email.toLowerCase(), accepted_at: null, revoked_at: null, expires_at: { $gt: now } })
+    .sort({ created_at: -1 })
+    .toArray();
+  if (!invites.length) return [];
+
+  const [teams, orgs] = await Promise.all([
+    c.teams.find({ _id: { $in: invites.map((invite) => invite.team_id) } }).toArray(),
+    c.organizations.find({ _id: { $in: invites.map((invite) => invite.org_id) } }).toArray(),
+  ]);
+  const teamById = new Map(teams.map((team) => [team._id, team]));
+  const orgById = new Map(orgs.map((org) => [org._id, org]));
+  return invites.map((invite) => {
+    const team = teamById.get(invite.team_id);
+    return {
+      id: invite._id,
+      role: invite.role,
+      team_name: team?.name ?? "Your team",
+      team_focus: team?.focus ?? "",
+      org_name: orgById.get(invite.org_id)?.name ?? "Your organization",
+    };
+  });
+}
+
 /** Public: what the invite is for. Expired, revoked, and used invites return 410. */
 export async function lookupInvite(deps: Deps, token: string) {
   const c = collections(deps.db);
@@ -112,6 +148,37 @@ export interface AcceptInput {
   timezone?: string;
 }
 
+async function claimInviteMembership(deps: Deps, inv: InviteDoc, user: { id: string; email: string }): Promise<{ team_id: string }> {
+  if (user.email.toLowerCase() !== inv.email) throw new HttpError(409, "sign_in_required", { email: inv.email });
+  const c = collections(deps.db);
+  const otherOrg = await c.memberships.findOne({ user_id: user.id, status: "active", org_id: { $ne: inv.org_id } });
+  if (otherOrg) throw new HttpError(409, "member_of_other_org");
+
+  const now = nowOf(deps);
+  const claimed = await c.invites.findOneAndUpdate(
+    { _id: inv._id, accepted_at: null, revoked_at: null, expires_at: { $gt: now } },
+    { $set: { accepted_at: now, accepted_by: user.id } },
+    { returnDocument: "after" },
+  );
+  if (!claimed) throw new HttpError(410, "already_used");
+  await c.memberships.updateOne(
+    { user_id: user.id, team_id: inv.team_id },
+    { $set: { role: inv.role, status: "active", org_id: inv.org_id }, $setOnInsert: { _id: randomUUID(), joined_at: now } },
+    { upsert: true },
+  );
+  await appendAudit(deps.db, { org_id: inv.org_id, who: user.id, action: "invite.accept", target_type: "invite", target_id: inv._id });
+  return { team_id: inv.team_id };
+}
+
+/** Accept a pending invitation by authenticated email, without needing the optional link token. */
+export async function acceptPendingInvite(deps: Deps, inviteId: string, user: { id: string; email: string }): Promise<{ team_id: string }> {
+  const inv = await collections(deps.db).invites.findOne({ _id: inviteId, email: user.email.toLowerCase() });
+  if (!inv) throw notFound();
+  const state = inviteState(inv, nowOf(deps));
+  if (state !== "pending") throw new HttpError(410, state === "accepted" ? "already_used" : state);
+  return claimInviteMembership(deps, inv, user);
+}
+
 /**
  * Accept. Idempotent: a second accept of the same token returns 410 already_used (and changes
  * nothing). New users are created here, server-side, as `volunteer` (or `coordinator` when the
@@ -128,14 +195,12 @@ export async function acceptInvite(
   const state = inviteState(inv, nowOf(deps));
   if (state !== "pending") throw new HttpError(410, state === "accepted" ? "already_used" : state);
 
-  let userId: string;
+  let user: { id: string; email: string };
   let setCookie: string[] = [];
   const existing = await c.users.findOne({ email: inv.email });
   if (existing) {
     if (!sessionUser || sessionUser.email.toLowerCase() !== inv.email) throw new HttpError(409, "sign_in_required", { email: inv.email });
-    userId = sessionUser.id;
-    const otherOrg = await c.memberships.findOne({ user_id: userId, status: "active", org_id: { $ne: inv.org_id } });
-    if (otherOrg) throw new HttpError(409, "member_of_other_org");
+    user = sessionUser;
   } else {
     if (!input.password || !input.display_name || !input.timezone) throw new HttpError(400, "invalid_payload", { issues: [{ path: "password", code: "required" }] });
     const res = await deps.auth.api.signUpEmail({
@@ -149,23 +214,9 @@ export async function acceptInvite(
       },
       returnHeaders: true,
     });
-    userId = res.response.user.id;
+    user = { id: res.response.user.id, email: inv.email };
     setCookie = res.headers.getSetCookie();
   }
-
-  // Claim the invite atomically so two concurrent accepts cannot both succeed.
-  const now = nowOf(deps);
-  const claimed = await c.invites.findOneAndUpdate(
-    { _id: inv._id, accepted_at: null, revoked_at: null },
-    { $set: { accepted_at: now, accepted_by: userId } },
-    { returnDocument: "after" },
-  );
-  if (!claimed) throw new HttpError(410, "already_used");
-  await c.memberships.updateOne(
-    { user_id: userId, team_id: inv.team_id },
-    { $set: { role: inv.role, status: "active", org_id: inv.org_id }, $setOnInsert: { _id: randomUUID(), joined_at: now } },
-    { upsert: true },
-  );
-  await appendAudit(deps.db, { org_id: inv.org_id, who: userId, action: "invite.accept", target_type: "invite", target_id: inv._id });
-  return { user_id: userId, team_id: inv.team_id, setCookie };
+  const accepted = await claimInviteMembership(deps, inv, user);
+  return { user_id: user.id, ...accepted, setCookie };
 }
