@@ -179,7 +179,7 @@ describe("volunteers: no rankings", () => {
 });
 
 describe("minimum cell size: suppressed server-side", () => {
-  const KINDS = ["calls_per_week", "follow_up_completion", "preference_reports", "overdue_trend", "warmth_distribution", "time_bands"];
+  const KINDS = ["calls_per_week", "follow_up_completion", "preference_reports", "overdue_trend", "warmth_distribution", "time_bands", "call_length", "effectiveness"];
   beforeAll(async () => {
     // Small data: 3 logs of each outcome at a time, 3 follow-ups, 2 ratings.
     await addLogs(3, { team: student, caller: callerId, daysAgo: 10, fields: { outcome: "voicemail", preference: "email_preferred" } });

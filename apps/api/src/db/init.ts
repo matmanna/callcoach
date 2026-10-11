@@ -5,22 +5,32 @@
 import type { Db } from "mongodb";
 import { AUDIT_COLLECTION, AUTH_COLLECTIONS, TENANT_COLLECTIONS } from "./collections.ts";
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 7;
 export const SCHEMA_CHANGES: Record<number, string> = {
+  7: "Activity: call_activity time series (hourly buckets, 400-day retention) for heatmaps; Atlas Search index on fact items when running on Atlas.",
+  6: "Org join codes: optional organizations.invite_code_hash (unique when set) and invite_code_rotated_at.",
+  5: "Insights: optional call_logs.call_seconds (call length) for call_length and effectiveness charts.",
+  4: "Onboarding: optional organizations profile fields (nonprofit_status, annual_revenue_band, staff_size_band, mission, country) and optional rubric item weight (missing means 1).",
   3: "K3: donor_limits, fact_item_versions, rubric_versions, knowledge_entries, handoff_packets, patterns; optional donors.region and rubrics.version.",
   1: "S2: identity, teams, memberships, invites, donors, gifts, campaigns, fact_sheets, rubrics, seed_runs, audit_log.",
   2: "P2: call_logs, call_flags, pending_limits, follow_ups, warmth_ratings and scoped idempotency indexes.",
 };
 
 export const APP_ROLE = "stewardship_app";
+/** Activity points older than this expire automatically (TTL on the time series collection). */
+export const ACTIVITY_RETENTION_DAYS = 400;
 
 export async function initDb(db: Db, log: (s: string) => void = () => {}): Promise<void> {
   const existing = new Set((await db.listCollections({}, { nameOnly: true }).toArray()).map((c) => c.name));
   for (const name of [...TENANT_COLLECTIONS, ...AUTH_COLLECTIONS, AUDIT_COLLECTION, "schema_versions"]) {
-    if (!existing.has(name)) {
+    if (existing.has(name)) continue;
+    if (name === "call_activity") {
+      // Time series: buckets by hour, compressed, and expires points after the retention window.
+      await db.createCollection(name, { timeseries: { timeField: "at", metaField: "meta", granularity: "hours" }, expireAfterSeconds: ACTIVITY_RETENTION_DAYS * 86_400 });
+    } else {
       await db.createCollection(name);
-      log(`created collection ${name}`);
     }
+    log(`created collection ${name}`);
   }
 
   await db.collection("organizations").createIndex({ slug: 1 }, { unique: true });
@@ -37,6 +47,7 @@ export async function initDb(db: Db, log: (s: string) => void = () => {}): Promi
   await db.collection("fact_sheets").createIndex({ org_id: 1 });
   await db.collection("rubrics").createIndex({ org_id: 1, team_id: 1 });
   await db.collection("donor_limits").createIndex({ org_id: 1, donor_id: 1, key: 1, version: 1 }, { unique: true });
+  await db.collection("organizations").createIndex({ invite_code_hash: 1 }, { unique: true, partialFilterExpression: { invite_code_hash: { $type: "string" } } });
   await db.collection("fact_item_versions").createIndex({ org_id: 1, sheet_id: 1, item_id: 1, version: 1 }, { unique: true });
   await db.collection("rubric_versions").createIndex({ org_id: 1, rubric_id: 1, version: 1 }, { unique: true });
   await db.collection("knowledge_entries").createIndex({ org_id: 1, status: 1, type: 1 });

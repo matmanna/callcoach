@@ -15,6 +15,7 @@ import logRaw from "../../../../../data/log-rules.json";
 import phraseRaw from "../../../../../data/phrase-rules.json";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
+import { CallRubric, useOrgRubric } from "@/components/dash/RubricPanel";
 import { toast } from "sonner";
 
 const cueRules = CueRulesFile.parse(cueRaw).rules;
@@ -28,6 +29,7 @@ function forRedactor(d: DonorDoc): Donor {
 
 export function PostCall() {
   const { donorId } = useParams();
+  const rubricItems = useOrgRubric();
   const [search] = useSearchParams();
   const logId = search.get("log");
   const { me } = useSession();
@@ -111,6 +113,7 @@ export function PostCall() {
       <div>Flags: {labels.map((label) => <label key={label} className="mr-3 inline-flex items-center gap-1"><input type="checkbox" checked={draft.flags.includes(label)} disabled={approved} onChange={(e) => edit({ flags: e.target.checked ? [...draft.flags, label] : draft.flags.filter((f) => f !== label) })} /> {label}</label>)}</div>
       {!approved ? <Button onClick={() => void approve()}>Approve structured log</Button> : <><Badge>Approved</Badge><Button asChild variant="outline"><Link to={`/logs/${logId}/warmth`}>Rate warmth</Link></Button><Button asChild variant="outline"><Link to={`/call/${donorId}/brief`}>Return to brief</Link></Button></>}
     </CardContent></Card> : null}
+    {draft ? <CallRubric items={rubricItems} fields={draft} title="How this call scores" /> : null}
     <Alert><AlertTitle>Device and send ledger</AlertTitle><AlertDescription className="space-y-2">
       <p>Kept on this device: {approved ? "note discarded" : note || "no note yet"}</p>
       <p>Scrub counts: {JSON.stringify(counts)}</p>

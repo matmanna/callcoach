@@ -1,3 +1,4 @@
+import { Masonry } from "@/components/dash/Masonry";
 import { LoadState, ModelNote, PageHeader } from "@/components/dash/bits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useApi } from "@/lib/useApi";
@@ -41,15 +42,15 @@ export function OverviewPage() {
       <PageHeader title="Overview" description={<ModelNote />} />
       <LoadState loading={loading} error={error}>
         {data ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {card("/coordinator/calls", "Calls this week", "From Monday", (
+          <Masonry>
+            {card("/coordinator/calls?tab=logs", "Calls this week", "From Monday", (
               <div className="flex gap-6">
                 <Stat label="completed" value={data.calls_this_week.completed} />
                 <Stat label="approved" value={data.calls_this_week.approved} />
                 <Stat label="pending approval" value={data.calls_this_week.pending_approval} />
               </div>
             ))}
-            {card("/coordinator/queue", "Coordinator queue", "Proposed flags awaiting a decision", (
+            {card("/coordinator/calls?tab=queue", "Coordinator queue", "Proposed flags awaiting a decision", (
               <div className="space-y-2">
                 <div className="flex gap-6">
                   <Stat label="open" value={data.queue.open} />
@@ -62,22 +63,22 @@ export function OverviewPage() {
                 </div>
               </div>
             ))}
-            {card("/coordinator/follow-ups", "Follow-ups", "In each team's time zone", (
+            {card("/coordinator/calls?tab=follow-ups", "Follow-ups", "In each team's time zone", (
               <div className="flex gap-6">
                 <Stat label="open" value={data.follow_ups.open} />
                 <Stat label="overdue" value={data.follow_ups.overdue} />
                 <Stat label="due this week" value={data.follow_ups.due_this_week} />
               </div>
             ))}
-            {card("/coordinator/queue", "Escalations", "Distress and stop-contact flags awaiting a decision", <Stat label="awaiting a decision" value={data.escalations.awaiting_decision} />)}
-            {card("/coordinator/fact-sheets", "Fact sheet health", "Stale items are hidden from callers", (
+            {card("/coordinator/calls?tab=queue", "Escalations", "Distress and stop-contact flags awaiting a decision", <Stat label="awaiting a decision" value={data.escalations.awaiting_decision} />)}
+            {card("/coordinator/knowledge?tab=fact-sheets", "Fact sheet health", "Stale items are hidden from callers", (
               <div className="flex gap-6">
                 <Stat label="approved" value={data.fact_sheet_health.approved} />
                 <Stat label="draft" value={data.fact_sheet_health.draft} />
                 <Stat label="stale" value={data.fact_sheet_health.stale} />
               </div>
             ))}
-          </div>
+          </Masonry>
         ) : null}
       </LoadState>
     </>

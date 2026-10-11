@@ -1,9 +1,10 @@
-import type { OrganizationDoc, TeamDoc } from "@sc/shared";
+import type { OrganizationDoc, OrgProfileUpdate, TeamDoc } from "@sc/shared";
 import { ObjectId } from "mongodb";
 import { randomUUID } from "node:crypto";
 import { appendAudit } from "../db/audit.ts";
 import { collections } from "../db/collections.ts";
 import { withTx } from "../db/tx.ts";
+import type { Access } from "../auth/access.ts";
 import { HttpError } from "../http.ts";
 import { nowOf, type Deps } from "./context.ts";
 
@@ -42,4 +43,15 @@ export async function onboardCoordinator(
 /** Better Auth's Mongo adapter stores user _id as an ObjectId; our ids are its hex string. */
 export function toUserKey(id: string): ObjectId | string {
   return ObjectId.isValid(id) && id.length === 24 ? new ObjectId(id) : id;
+}
+
+/** Coordinator edits the organization profile. Only the fields sent are changed; null clears a field. */
+export async function updateOrgProfile(deps: Deps, access: Access, orgId: string, input: OrgProfileUpdate): Promise<void> {
+  const set: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) if (value !== undefined) set[key] = value;
+  if (!Object.keys(set).length) return;
+  await withTx(deps.client, async (session) => {
+    await collections(deps.db).organizations.updateOne({ _id: orgId }, { $set: set }, { session });
+    await appendAudit(deps.db, { org_id: orgId, who: access.user.id, action: "org.profile", target_type: "organization", target_id: orgId, note: Object.keys(set).join(", ") }, session);
+  });
 }

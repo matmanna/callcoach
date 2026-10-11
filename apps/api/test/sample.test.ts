@@ -4,7 +4,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { SAMPLE_DONORS, SAMPLE_FACTS, SAMPLE_GIFTS, SAMPLE_RUBRIC } from "../src/sample/sampleData.ts";
 import { loadAccess } from "../src/auth/access.ts";
 import { seedSampleData } from "../src/services/sample.ts";
+import { GENERATED_DONORS } from "../src/services/demoActivity.ts";
 import { harness, inviteAndAccept, signUpCoordinator, type Harness } from "./helpers.ts";
+
+/** Sample donors plus the synthetic donor spread that new organizations also get. */
+const DONOR_TOTAL = SAMPLE_DONORS.length + GENERATED_DONORS;
 
 let h: Harness;
 const file = (name: string) => readFileSync(new URL(`../../../data/seed/${name}`, import.meta.url), "utf8");
@@ -44,8 +48,11 @@ describe("automatic sample data for new coordinators", () => {
       const me = (await s.client.get("/api/me")).json;
       expect(me.teams[0].children.map((t: { name: string }) => t.name).sort()).toEqual(["Alumni Callers", "Student Callers"]);
       const donors = (await s.client.get("/api/donors")).json.donors as Array<{ external_id: string; region: string }>;
-      expect(donors).toHaveLength(10);
+      expect(donors).toHaveLength(DONOR_TOTAL);
       expect(donors.every((d) => !!d.region)).toBe(true);
+      // New organizations also get calls, follow-ups, warmth ratings, and a spread of donors across regions.
+      expect(await h.deps.db.collection("call_logs").countDocuments({ org_id: s.orgId, demo: true })).toBeGreaterThan(0);
+      expect(new Set(donors.map((d) => d.region)).size).toBeGreaterThan(5);
       const sheets = (await s.client.get("/api/fact-sheets")).json.fact_sheets;
       expect(sheets).toHaveLength(1);
       expect(sheets[0].items.map((i: { status: string }) => i.status)).toEqual(["approved", "approved", "approved"]);
@@ -61,8 +68,41 @@ describe("automatic sample data for new coordinators", () => {
       const { client: vol } = await inviteAndAccept(h, a.client, teamId, "vol-a@example.org");
       const callList = (await vol.get("/api/donors")).json.donors as unknown[];
       expect(callList.length).toBeGreaterThan(0);
-      expect((await b.client.get("/api/donors")).json.donors).toHaveLength(10);
-      expect(await h.deps.db.collection("donors").countDocuments({ org_id: a.orgId })).toBe(10);
+      expect((await b.client.get("/api/donors")).json.donors).toHaveLength(DONOR_TOTAL);
+      expect(await h.deps.db.collection("donors").countDocuments({ org_id: a.orgId })).toBe(DONOR_TOTAL);
+    });
+
+    it("backfills an organization created before seeding, once, even under concurrent requests", async () => {
+      delete h.deps.env.AUTO_SEED_SAMPLE_DATA; // the org below predates automatic seeding
+      const s = await signUpCoordinator(h, "legacy@example.org", "Legacy Org");
+      h.deps.env.AUTO_SEED_SAMPLE_DATA = "1";
+      expect(await h.deps.db.collection("donors").countDocuments({ org_id: s.orgId })).toBe(0);
+      const responses = await Promise.all([1, 2, 3, 4].map(() => s.client.get("/api/me")));
+      expect(responses.every((r) => r.status === 200)).toBe(true);
+      expect(await h.deps.db.collection("donors").countDocuments({ org_id: s.orgId })).toBe(DONOR_TOTAL);
+      expect(await h.deps.db.collection("teams").countDocuments({ org_id: s.orgId, name: { $in: ["Student Callers", "Alumni Callers"] } })).toBe(2);
+      expect(await h.deps.db.collection("fact_sheets").countDocuments({ org_id: s.orgId })).toBe(1);
+      const me = (await s.client.get("/api/me")).json;
+      expect(me.teams[0].children.map((t: { name: string }) => t.name).sort()).toEqual(["Alumni Callers", "Student Callers"]);
+      // The coordinator can make calls: the Calls page lists the sample donors and a brief opens.
+      const donors = (await s.client.get("/api/donors")).json.donors as Array<{ _id: string }>;
+      expect(donors).toHaveLength(DONOR_TOTAL);
+      expect((await s.client.get(`/api/donors/${donors[0]!._id}/brief`)).status).toBe(200);
+      // Seeded once: deleting donors later does not trigger another seed.
+      await h.deps.db.collection("donors").deleteMany({ org_id: s.orgId });
+      await s.client.get("/api/me");
+      expect(await h.deps.db.collection("donors").countDocuments({ org_id: s.orgId })).toBe(0);
+    });
+
+    it("leaves an organization with its own donors alone", async () => {
+      delete h.deps.env.AUTO_SEED_SAMPLE_DATA;
+      const s = await signUpCoordinator(h, "own@example.org", "Own Org");
+      h.deps.env.AUTO_SEED_SAMPLE_DATA = "1";
+      await s.client.post("/api/teams", { name: "Calling Team", focus: "" });
+      const csv = "external_id,first_name,last_name,campaign,gift_band,past_gift_count,last_gift_band,team_name\nx-1,Ada,Moss,Spring,$1-$49,1,$1-$49,Calling Team\n";
+      expect((await s.client.post("/api/imports/donors/commit", { file_name: "d.csv", content: csv })).status).toBe(201);
+      await s.client.get("/api/me");
+      expect(await h.deps.db.collection("donors").countDocuments({ org_id: s.orgId })).toBe(1);
     });
 
     it("is idempotent", async () => {
@@ -70,7 +110,7 @@ describe("automatic sample data for new coordinators", () => {
       const user = (await s.client.get("/api/me")).json.user;
       const again = await seedSampleData(h.deps, user);
       expect(again.skipped).toBe("already_seeded");
-      expect(await h.deps.db.collection("donors").countDocuments({ org_id: s.orgId })).toBe(10);
+      expect(await h.deps.db.collection("donors").countDocuments({ org_id: s.orgId })).toBe(DONOR_TOTAL);
       expect((await loadAccess(h.deps.db, user)).orgId).toBe(s.orgId);
     });
   });

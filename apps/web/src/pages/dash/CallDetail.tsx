@@ -1,3 +1,4 @@
+import type { LogFields } from "@sc/shared";
 import { LoadState, PageHeader, fmtDate, fmtDateTime } from "@/components/dash/bits";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useApi } from "@/lib/useApi";
 import { useTeamScope, withQuery } from "@/lib/teamScope";
 import { useParams } from "react-router";
+import { CallRubric, useOrgRubric } from "@/components/dash/RubricPanel";
 
 interface Fields { outcome: string; donor_stated_reason: string; preference: string; follow_up: { needed: boolean; action: string; due_date: string | null }; flags: string[] }
 interface Call {
@@ -19,6 +21,7 @@ interface Call {
 
 export function CallDetailPage() {
   const { id = "" } = useParams();
+  const rubricItems = useOrgRubric();
   const scope = useTeamScope();
   const { data, error, loading } = useApi<Call>(withQuery(`/calls/${id}`, scope.q));
   return (
@@ -42,6 +45,7 @@ export function CallDetailPage() {
                 <div className="pt-2 text-xs text-muted-foreground">Draft: model fields {data.draft_history.model_draft}; {data.draft_history.edited_before_approval ? "edited before approval" : "approved as drafted"}.</div>
               </CardContent>
             </Card>
+            <CallRubric items={rubricItems} fields={data.approved as LogFields | null} title="Rubric for this call" />
             <Card>
               <CardHeader><CardTitle>Warmth</CardTitle><CardDescription>Caller's and model's ratings, shown separately. Never averaged.</CardDescription></CardHeader>
               <CardContent className="space-y-1 text-sm">

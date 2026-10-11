@@ -5,6 +5,8 @@ import {
   CoordinatorOnboarding,
   CreateInvite,
   CreateTeam,
+  OrgProfileUpdate,
+  RubricUpdate,
   SeedKind,
   UpdateProfile,
   UpdateTeam,
@@ -21,13 +23,18 @@ import { toCsv } from "../imports/csv.ts";
 import { ImportRequest, commitImport, previewImport } from "../imports/importer.ts";
 import type { Deps } from "../services/context.ts";
 import { acceptInvite, acceptPendingInvite, createInvite, listInvites, listPendingInvitesForEmail, lookupInvite, resendInvite, revokeInvite } from "../services/invites.ts";
-import { onboardCoordinator, toUserKey } from "../services/orgs.ts";
-import { seedSampleDataSafely } from "../services/sample.ts";
+import { onboardCoordinator, toUserKey, updateOrgProfile } from "../services/orgs.ts";
+import { setOrgRubricWeights, uploadOnboardingFactSheet } from "../services/onboarding.ts";
+import { sampleSeedEnabled, seedSampleDataSafely } from "../services/sample.ts";
 import { dashboardRoutes } from "./dashboard.ts";
 import { callerVisibleItems, listSheets as listSheetViews, staleDays, loadSheet as loadSheetV, approveVersion as approveFactVersion } from "../services/dashboard/facts.ts";
 import { nowOf } from "../services/context.ts";
 import { archiveTeam, changeMemberRole, createTeam, listMembers, removeMember, teamTree, updateTeam } from "../services/teams.ts";
 import { postCallRoutes } from "./postcall.ts";
+import { volunteerRubric } from "../services/dashboard/rubricScores.ts";
+import { activityHeatmap } from "../services/activity.ts";
+import { searchFacts } from "../services/factSearch.ts";
+import { joinCodeStatus, joinWithCode, rotateJoinCode } from "../services/orgCodes.ts";
 
 export type ApiEnv = { Variables: { user: SessionUser | null; access: Access } };
 
@@ -59,15 +66,57 @@ export function apiRoutes(deps: Deps) {
 
   // ---------- me / onboarding ----------
   api.get("/me", async (c) => {
-    const access = c.get("access");
+    let access = c.get("access");
+    // Coordinators of organizations created before automatic seeding get sample data once, on first sign-in.
+    if (access.orgId && access.user.user_type === "coordinator" && sampleSeedEnabled(deps.env) && (await seedSampleDataSafely(deps, access.user))) {
+      access = await loadAccess(deps.db, access.user);
+    }
     const org = access.orgId ? await collections(deps.db).organizations.findOne({ _id: access.orgId }) : null;
     return c.json({
       user: access.user,
-      org: org ? { id: org._id, name: org.name, slug: org.slug } : null,
+      org: org
+        ? {
+            id: org._id,
+            name: org.name,
+            slug: org.slug,
+            nonprofit_status: org.nonprofit_status ?? null,
+            annual_revenue_band: org.annual_revenue_band ?? null,
+            staff_size_band: org.staff_size_band ?? null,
+            mission: org.mission ?? null,
+            country: org.country ?? null,
+          }
+        : null,
       onboarding_required: !access.orgId,
       pending_invites: await listPendingInvitesForEmail(deps, access.user.email),
       teams: teamTree(access),
     });
+  });
+
+  // Organization join code. Coordinators see whether one is active and rotate it. Volunteers enter it to join.
+  api.get("/org/join-code", async (c) => c.json(await joinCodeStatus(deps, requireCoordinator(c.get("access")))));
+  api.post("/org/join-code/rotate", async (c) => {
+    const access = c.get("access");
+    const orgId = requireCoordinator(access);
+    parseBody(z.strictObject({}), await jsonBody(c));
+    return c.json(await rotateJoinCode(deps, orgId, access.user.id));
+  });
+  api.post("/org/join", async (c) => {
+    const user = c.get("user");
+    if (!user) throw new Error("authenticated route missing session user");
+    const body = parseBody(z.strictObject({ code: z.string().trim().min(8).max(12) }), await jsonBody(c));
+    return c.json(await joinWithCode(deps, { id: user.id, user_type: user.user_type }, body.code), 201);
+  });
+
+  // The volunteer's own activity heatmap.
+  api.get("/me/activity", async (c) => {
+    const access = c.get("access");
+    return c.json(await activityHeatmap(deps, { orgId: requireOrg(access), callerId: access.user.id }));
+  });
+
+  // The volunteer's own rubric results. Same rules as the coordinator view, for their calls only.
+  api.get("/me/rubric", async (c) => {
+    const orgId = requireOrg(c.get("access"));
+    return c.json(await volunteerRubric(deps, orgId, c.get("access").user.id, null));
   });
 
   api.patch("/me", async (c) => {
@@ -86,6 +135,29 @@ export function apiRoutes(deps: Deps) {
     // Sample teams, donors, facts and a rubric for every new organization (when AUTO_SEED_SAMPLE_DATA=1).
     await seedSampleDataSafely(deps, c.get("access").user);
     return c.json({ org, root_team: rootTeam }, 201);
+  });
+
+  // Onboarding step 2 (and later edits from settings): organization profile.
+  api.put("/org/profile", async (c) => {
+    const access = c.get("access");
+    const orgId = requireCoordinator(access);
+    await updateOrgProfile(deps, access, orgId, parseBody(OrgProfileUpdate, await jsonBody(c)));
+    return c.json({ ok: true });
+  });
+
+  // Onboarding step 3: the organization's fact sheet. Approved on upload; Bedrock reads approved facts as context.
+  api.post("/onboarding/fact-sheet", async (c) => {
+    const access = c.get("access");
+    const orgId = requireCoordinator(access);
+    const body = parseBody(ImportRequest, await jsonBody(c));
+    return c.json(await uploadOnboardingFactSheet(deps, access, orgId, body), 201);
+  });
+
+  // Onboarding step 4: how much each rubric item counts. Creates the org rubric when none exists.
+  api.put("/onboarding/rubric", async (c) => {
+    const access = c.get("access");
+    const orgId = requireCoordinator(access);
+    return c.json(await setOrgRubricWeights(deps, access, orgId, parseBody(RubricUpdate, await jsonBody(c))));
   });
 
   api.post("/onboarding/invites/:id/accept", async (c) => {
@@ -213,6 +285,12 @@ export function apiRoutes(deps: Deps) {
     const sheets = await collections(deps.db).fact_sheets.find({ org_id: orgId }).sort({ created_at: -1 }).toArray();
     const visible: FactSheetDoc[] = sheets.map((s) => ({ ...s, items: callerVisibleItems(s.items, nowOf(deps), staleDays(deps)) }));
     return c.json({ fact_sheets: visible });
+  });
+
+  // Keyword search over approved facts. Any signed-in member can search; drafts are never returned.
+  api.get("/fact-sheets/search", async (c) => {
+    const orgId = requireOrg(c.get("access"));
+    return c.json({ results: await searchFacts(deps, orgId, c.req.query("q") ?? "") });
   });
 
   // Kept for S2 clients: approves the item's current draft version (second-approver rule applies).

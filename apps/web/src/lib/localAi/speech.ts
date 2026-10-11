@@ -1,5 +1,18 @@
 /** Local Whisper speech recognition. Remote model loading and browser caching are disabled. */
-export const ASR_MODEL_ID = "Xenova/whisper-tiny.en";
+import { LOCAL_MODEL_PATH, ORT_WASM_PATHS } from "./ner";
+/** Browser build: smallest Whisper, so the page loads fast on any laptop. */
+export const ASR_MODEL_WEB = "Xenova/whisper-tiny.en";
+/**
+ * Desktop (Tauri) build: base.en. The app ships its model files locally and runs on a machine
+ * with far more RAM than a browser tab gets, and base.en is much more accurate than tiny.en on
+ * conversational speech. Still CPU-only in the webview (WebGPU is not available on Linux WebKit).
+ */
+export const ASR_MODEL_DESKTOP = "Xenova/whisper-base.en";
+
+/** True inside the Tauri webview. Checked at call time, so tests can stub `window`. */
+export const isDesktopRuntime = (): boolean => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+export const asrModelId = (desktop: boolean = isDesktopRuntime()): string => (desktop ? ASR_MODEL_DESKTOP : ASR_MODEL_WEB);
 export const ASR_DTYPE = "q8";
 
 type SpeechResult = { text?: string } | Array<{ text?: string }>;
@@ -31,12 +44,14 @@ async function defaultFactory(device: "webgpu" | "wasm"): Promise<SpeechPipeline
   const tf = await import("@huggingface/transformers");
   tf.env.allowRemoteModels = false;
   tf.env.allowLocalModels = true;
-  tf.env.localModelPath = "/models/";
+  tf.env.localModelPath = LOCAL_MODEL_PATH;
   tf.env.useBrowserCache = false;
   tf.env.fetch = (input: string | URL, init?: RequestInit) => window.fetch(input, init);
   const onnx = tf.env.backends.onnx;
-  if (onnx.wasm) onnx.wasm.wasmPaths = "/ort/";
-  const pipeline = await tf.pipeline("automatic-speech-recognition", ASR_MODEL_ID, { device, dtype: ASR_DTYPE });
+  // Same module and WASM paths as NER. In Tauri a string path lets ONNX Runtime resolve an
+  // incompatible worker module; explicit paths work in both the webview and the browser.
+  if (onnx.wasm) onnx.wasm.wasmPaths = { ...ORT_WASM_PATHS };
+  const pipeline = await tf.pipeline("automatic-speech-recognition", asrModelId(), { device, dtype: ASR_DTYPE });
   return (audio) => pipeline(audio) as unknown as Promise<SpeechResult>;
 }
 

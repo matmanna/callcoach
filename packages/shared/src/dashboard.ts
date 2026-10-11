@@ -4,6 +4,7 @@
  */
 import { z } from "zod";
 import { Tag } from "./enums.ts";
+import { RubricWeight } from "./orgProfile.ts";
 import { Timezone } from "./identity.ts";
 
 const id = z.string().min(1);
@@ -100,6 +101,7 @@ export const RubricUpdate = z.strictObject({
         text: z.string().trim().min(1).max(300),
         supporting_tags: z.array(Tag),
         conditional_on_tag: Tag.nullable().optional(),
+        weight: RubricWeight.optional(),
       }),
     )
     .min(1),
@@ -111,7 +113,7 @@ export const RubricVersionDoc = z.object({
   org_id: id,
   rubric_id: id,
   version: z.number().int().positive(),
-  items: z.array(z.object({ id, text: z.string(), supporting_tags: z.array(Tag), conditional_on_tag: Tag.nullable() })),
+  items: z.array(z.object({ id, text: z.string(), supporting_tags: z.array(Tag), conditional_on_tag: Tag.nullable(), weight: RubricWeight.optional() })),
   note: z.string().nullable(),
   created_by: id,
   created_at: z.date(),

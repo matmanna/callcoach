@@ -5,7 +5,11 @@ import { signIn } from "@/lib/auth-client";
 import { useSession } from "@/lib/session";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
+import { LogIn } from "lucide-react";
 import { AuthCard } from "./AuthCard.tsx";
+
+/** Same pastel family as onboarding, in blue. */
+const SIGN_IN_ACCENT = { tint: "#e0eef8", ink: "#4a7fa6", icon: LogIn };
 
 export function SignIn() {
   const { refresh } = useSession();
@@ -19,7 +23,7 @@ export function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   return (
-    <AuthCard title="Sign in" description={inviteEmail ? `Sign in as ${inviteEmail} to accept your invite.` : "Coordinators and volunteers sign in here."}>
+    <AuthCard title="Sign in" description={inviteEmail ? `Sign in as ${inviteEmail} to accept your invite.` : "Sign in to see your teams and calls."} accent={SIGN_IN_ACCENT}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();

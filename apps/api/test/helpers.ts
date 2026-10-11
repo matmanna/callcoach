@@ -71,6 +71,7 @@ export class Client {
   get = (p: string) => this.req("GET", p);
   post = (p: string, b?: unknown) => this.req("POST", p, b ?? {});
   patch = (p: string, b?: unknown) => this.req("PATCH", p, b ?? {});
+  put = (p: string, b?: unknown) => this.req("PUT", p, b ?? {});
 }
 
 export async function signUpCoordinator(h: Harness, email: string, orgName: string) {

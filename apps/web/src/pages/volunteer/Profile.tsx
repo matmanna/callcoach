@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { RubricBreakdown } from "@/components/dash/RubricPanel";
+import { ActivityHeatmap } from "@/components/dash/ActivityHeatmap";
 import { api, errorMessage } from "@/lib/api";
 import { changePassword } from "@/lib/auth-client";
 import { useSession } from "@/lib/session";
@@ -16,6 +18,8 @@ export function Profile() {
   return (
     <div className="grid max-w-2xl gap-6">
       <h1 className="text-2xl font-semibold">Profile</h1>
+      <ActivityHeatmap path="/me/activity" title="Your calling activity" />
+      <RubricBreakdown path="/me/rubric" title="Your rubric results" />
       <Card>
         <CardHeader>
           <CardTitle>Name and time zone</CardTitle>

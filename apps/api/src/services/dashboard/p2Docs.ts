@@ -23,6 +23,8 @@ export interface CallLogRow {
   status: "draft" | "approved";
   draft: LogFieldsDoc;
   model_draft: string;
+  /** Call length in seconds, when recorded (schema v5). */
+  call_seconds?: number | null;
   approved: LogFieldsDoc | null;
   approved_at: Date | null;
   corrects_log_id: string | null;

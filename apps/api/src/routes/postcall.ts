@@ -1,4 +1,5 @@
 import { changeLimit } from "../services/dashboard/limits.ts";
+import { recordActivity } from "../services/activity.ts";
 import {
   ApproveLogPayload,
   DecisionBody,
@@ -24,6 +25,7 @@ import { HttpError, jsonBody, notFound, parseBody } from "../http.ts";
 import { accessibleDonor, donorBrief } from "../services/brief.ts";
 import { nowOf, type Deps } from "../services/context.ts";
 import { modelWarmth } from "../services/postcallModel.ts";
+import { orgModelContext } from "../services/orgContext.ts";
 import { assertNoPii, assertNoPiiText } from "../services/postcallGuard.ts";
 import { toUserKey } from "../services/orgs.ts";
 import { teamTimezone } from "../services/teamTimezone.ts";
@@ -240,6 +242,9 @@ export function postCallRoutes(deps: Deps) {
       if (retry?.status === "approved" && retry.idempotency_key === body.idempotency_key) return c.json({ log: retry });
       throw err;
     }
+    // Time series collections cannot take inserts inside a multi-document transaction, so the activity
+    // point follows the commit. Approval is idempotent, so this runs once per approved log.
+    await recordActivity(deps, undefined as never, { orgId: log.org_id, teamId: log.team_id, callerId: log.caller_id, at: now });
     return c.json({ log: await cdb.call_logs.findOne({ _id: log._id, org_id: log.org_id }) });
   });
 
@@ -277,7 +282,7 @@ export function postCallRoutes(deps: Deps) {
       throw err;
     }
     if (enabled) {
-      const result = await modelWarmth(deps, log.approved);
+      const result = await modelWarmth(deps, log.approved, await orgModelContext(deps, log.org_id));
       if (result) {
         try {
           assertNoPiiText(result.reason, donor, access.user.name);

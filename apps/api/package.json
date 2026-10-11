@@ -8,7 +8,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "db:seed": "tsx --env-file-if-exists=../../.env src/db/seed.ts",
     "db:init": "tsx --env-file-if-exists=../../.env src/db/initCli.ts",
-    "db:seed:demo": "tsx --env-file-if-exists=../../.env src/db/seedDemo.ts"
+    "db:seed:demo": "tsx --env-file-if-exists=../../.env src/db/seedDemo.ts",
+    "db:org-code": "tsx --env-file-if-exists=../../.env src/db/orgCode.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1149.0",

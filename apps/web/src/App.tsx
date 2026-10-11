@@ -21,27 +21,15 @@ const SignUp = page("SignUp");
 const AcceptInvite = page("AcceptInvite");
 const Onboarding = page("Onboarding");
 const OverviewPage = page("OverviewPage");
-const ContactsPage = page("ContactsPage");
 const ContactDetailPage = page("ContactDetailPage");
-const VolunteersPage = page("VolunteersPage");
 const VolunteerDetailPage = page("VolunteerDetailPage");
-const CallsPage = page("CallsPage");
 const CallDetailPage = page("CallDetailPage");
-const FollowUpsPage = page("FollowUpsPage");
-const QueuePage = page("QueuePage");
-const FactSheetEditorPage = page("FactSheetEditorPage");
-const RubricsPage = page("RubricsPage");
-const KnowledgePage = page("KnowledgePage");
-const HandoffsPage = page("HandoffsPage");
-const InsightsPage = page("InsightsPage");
-const GeographyPage = page("GeographyPage");
-const TimeBandsPage = page("TimeBandsPage");
-const CampaignsInsightsPage = page("CampaignsInsightsPage");
-const AuditPage = page("AuditPage");
-const Import = page("Import");
-const Invites = page("Invites");
-const Members = page("Members");
-const Teams = page("Teams");
+const PeopleHub = page("PeopleHub");
+const CallsHub = page("CallsHub");
+const KnowledgeHub = page("KnowledgeHub");
+const InsightsHub = page("InsightsHub");
+const AdminHub = page("AdminHub");
+const TabRedirect = page("TabRedirect");
 const Brief = page("Brief");
 const DonorList = page("DonorList");
 const LiveCall = page("LiveCall");
@@ -107,27 +95,30 @@ const router = createBrowserRouter([
             element: <CoordinatorShell />,
             children: [
               { path: "/coordinator", element: <OverviewPage /> },
-              { path: "/coordinator/contacts", element: <ContactsPage /> },
+              { path: "/coordinator/people", element: <PeopleHub /> },
               { path: "/coordinator/contacts/:id", element: <ContactDetailPage /> },
-              { path: "/coordinator/volunteers", element: <VolunteersPage /> },
               { path: "/coordinator/volunteers/:id", element: <VolunteerDetailPage /> },
-              { path: "/coordinator/teams", element: <Teams /> },
-              { path: "/coordinator/calls", element: <CallsPage /> },
+              { path: "/coordinator/calls", element: <CallsHub /> },
               { path: "/coordinator/calls/:id", element: <CallDetailPage /> },
-              { path: "/coordinator/follow-ups", element: <FollowUpsPage /> },
-              { path: "/coordinator/queue", element: <QueuePage /> },
-              { path: "/coordinator/fact-sheets", element: <FactSheetEditorPage /> },
-              { path: "/coordinator/rubrics", element: <RubricsPage /> },
-              { path: "/coordinator/knowledge", element: <KnowledgePage /> },
-              { path: "/coordinator/handoffs", element: <HandoffsPage /> },
-              { path: "/coordinator/insights", element: <InsightsPage /> },
-              { path: "/coordinator/insights/geography", element: <GeographyPage /> },
-              { path: "/coordinator/insights/time", element: <TimeBandsPage /> },
-              { path: "/coordinator/insights/campaigns", element: <CampaignsInsightsPage /> },
-              { path: "/coordinator/import", element: <Import /> },
-              { path: "/coordinator/invites", element: <Invites /> },
-              { path: "/coordinator/members", element: <Members /> },
-              { path: "/coordinator/audit", element: <AuditPage /> },
+              { path: "/coordinator/knowledge", element: <KnowledgeHub /> },
+              { path: "/coordinator/insights", element: <InsightsHub /> },
+              { path: "/coordinator/admin", element: <AdminHub /> },
+              // Links from before the hubs. Each one opens the hub tab or card that holds the page now.
+              { path: "/coordinator/contacts", element: <TabRedirect to="/coordinator/people" tab="contacts" /> },
+              { path: "/coordinator/volunteers", element: <TabRedirect to="/coordinator/people" tab="volunteers" /> },
+              { path: "/coordinator/teams", element: <TabRedirect to="/coordinator/people" tab="teams" /> },
+              { path: "/coordinator/queue", element: <TabRedirect to="/coordinator/calls" tab="queue" /> },
+              { path: "/coordinator/follow-ups", element: <TabRedirect to="/coordinator/calls" tab="follow-ups" /> },
+              { path: "/coordinator/fact-sheets", element: <TabRedirect to="/coordinator/knowledge" tab="fact-sheets" /> },
+              { path: "/coordinator/rubrics", element: <TabRedirect to="/coordinator/knowledge" tab="rubrics" /> },
+              { path: "/coordinator/handoffs", element: <TabRedirect to="/coordinator/knowledge" tab="handoffs" /> },
+              { path: "/coordinator/insights/geography", element: <TabRedirect to="/coordinator/insights" tab="geography" /> },
+              { path: "/coordinator/insights/time", element: <TabRedirect to="/coordinator/insights" tab="time" /> },
+              { path: "/coordinator/insights/campaigns", element: <TabRedirect to="/coordinator/insights" tab="campaigns" /> },
+              { path: "/coordinator/import", element: <TabRedirect to="/coordinator/admin" /> },
+              { path: "/coordinator/members", element: <TabRedirect to="/coordinator/people" tab="volunteers" /> },
+              { path: "/coordinator/invites", element: <TabRedirect to="/coordinator/people" tab="volunteers" /> },
+                            { path: "/coordinator/audit", element: <TabRedirect to="/coordinator/admin" /> },
             ],
           },
           {

@@ -6,7 +6,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -22,28 +21,30 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { signOut } from "@/lib/auth-client";
 import { flattenTeams, isCoordinator, useSession } from "@/lib/session";
 import { useTeamScope } from "@/lib/teamScope";
+import { BookOpen, ChartColumn, LayoutDashboard, Phone, Settings, Users, type LucideIcon } from "lucide-react";
 import { Fragment } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 
 interface NavItem {
   to: string;
   label: string;
-}
-interface NavSection {
-  label: string;
-  items: NavItem[];
+  icon: LucideIcon;
+  /** Paths that belong to this entry, including its detail pages. */
+  matches: string[];
 }
 
-export const NAV: NavSection[] = [
-  { label: "Overview", items: [{ to: "/coordinator", label: "Home" }] },
-  { label: "People", items: [{ to: "/coordinator/contacts", label: "Contacts" }, { to: "/coordinator/volunteers", label: "Volunteers" }, { to: "/coordinator/teams", label: "Teams" }] },
-  { label: "Calls", items: [{ to: "/calls", label: "Make calls" }, { to: "/coordinator/calls", label: "Calls and logs" }, { to: "/coordinator/follow-ups", label: "Follow-ups" }, { to: "/coordinator/queue", label: "Coordinator queue" }] },
-  { label: "Knowledge", items: [{ to: "/coordinator/fact-sheets", label: "Fact sheets" }, { to: "/coordinator/rubrics", label: "Rubrics" }, { to: "/coordinator/knowledge", label: "Knowledge entries" }, { to: "/coordinator/handoffs", label: "Handoff packets" }] },
-  { label: "Insights", items: [{ to: "/coordinator/insights", label: "Patterns" }, { to: "/coordinator/insights/geography", label: "Geography" }, { to: "/coordinator/insights/time", label: "Time" }, { to: "/coordinator/insights/campaigns", label: "Campaigns" }] },
-  { label: "Admin", items: [{ to: "/coordinator/import", label: "Imports" }, { to: "/coordinator/invites", label: "Invites" }, { to: "/coordinator/members", label: "Members" }, { to: "/coordinator/audit", label: "Audit log" }] },
+/** Six entries. Each one opens a hub (pages/dash/Hubs.tsx) that groups the pages it used to list. */
+export const NAV: NavItem[] = [
+  { to: "/coordinator", label: "Home", icon: LayoutDashboard, matches: ["/coordinator"] },
+  { to: "/coordinator/people", label: "People", icon: Users, matches: ["/coordinator/people", "/coordinator/contacts", "/coordinator/volunteers", "/coordinator/teams"] },
+  { to: "/coordinator/calls", label: "Calls", icon: Phone, matches: ["/coordinator/calls", "/coordinator/queue", "/coordinator/follow-ups"] },
+  { to: "/coordinator/knowledge", label: "Knowledge", icon: BookOpen, matches: ["/coordinator/knowledge", "/coordinator/fact-sheets", "/coordinator/rubrics", "/coordinator/handoffs"] },
+  { to: "/coordinator/insights", label: "Insights", icon: ChartColumn, matches: ["/coordinator/insights"] },
+  { to: "/coordinator/admin", label: "Admin", icon: Settings, matches: ["/coordinator/admin", "/coordinator/import", "/coordinator/audit"] },
 ];
 
-const LABELS = new Map(NAV.flatMap((s) => s.items.map((i) => [i.to, { section: s.label, label: i.label }] as const)));
+const isUnder = (pathname: string, prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
+const activeItem = (pathname: string) => NAV.find((item) => (item.to === "/coordinator" ? pathname === item.to : item.matches.some((m) => isUnder(pathname, m))));
 
 function TeamSwitcher() {
   const { me } = useSession();
@@ -71,12 +72,11 @@ function Crumbs() {
   const { pathname } = useLocation();
   const scope = useTeamScope();
   const { me } = useSession();
-  const base = [...LABELS.keys()].filter((p) => pathname === p || pathname.startsWith(`${p}/`)).sort((a, b) => b.length - a.length)[0];
-  const info = base ? LABELS.get(base) : undefined;
-  const detail = base && pathname !== base;
+  const item = activeItem(pathname);
+  const detail = !!item && pathname !== item.to;
   const team = scope.team === "all" ? "All teams" : (flattenTeams(me?.teams ?? []).find((t) => t._id === scope.team)?.name ?? "Team");
   const crumbs: Array<{ label: string; to?: string }> = [{ label: team, to: scope.link("/coordinator") }];
-  if (info) crumbs.push({ label: info.section }, { label: info.label, ...(detail ? { to: scope.link(base!) } : {}) });
+  if (item) crumbs.push({ label: item.label, ...(detail ? { to: scope.link(item.to) } : {}) });
   if (detail) crumbs.push({ label: "Details" });
   return (
     <Breadcrumb>
@@ -110,31 +110,26 @@ export function CoordinatorShell() {
     <SidebarProvider>
       <Sidebar collapsible="icon">
         <SidebarHeader className="gap-2">
-          <div className="px-2 pt-1 text-sm font-semibold group-data-[collapsible=icon]:hidden">Stewardship Copilot</div>
+          <div className="px-2 pt-1 text-sm font-semibold group-data-[collapsible=icon]:hidden">CallCoach</div>
           <div className="group-data-[collapsible=icon]:hidden"><TeamSwitcher /></div>
         </SidebarHeader>
         <SidebarContent>
-          {NAV.map((section) => (
-            <SidebarGroup key={section.label}>
-              <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {section.items.map((item) => {
-                    const active = item.to === "/coordinator" ? pathname === item.to : pathname === item.to || (pathname.startsWith(`${item.to}/`) && !NAV.some((s) => s.items.some((o) => o.to !== item.to && o.to.startsWith(item.to) && pathname.startsWith(o.to))));
-                    return (
-                      <SidebarMenuItem key={item.to}>
-                        <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
-                          <Link to={scope.link(item.to)}>
-                            <span className="truncate">{item.label}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ))}
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {NAV.map((item) => (
+                  <SidebarMenuItem key={item.to}>
+                    <SidebarMenuButton asChild isActive={activeItem(pathname) === item} tooltip={item.label}>
+                      <Link to={scope.link(item.to)} aria-label={item.label}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
           <div className="flex items-center justify-between gap-2 px-2 text-xs group-data-[collapsible=icon]:hidden">

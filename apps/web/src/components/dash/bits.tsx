@@ -2,7 +2,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
+
+/** Set by hubs (Hub.tsx) so pages embedded in a tab or card do not repeat their own title. */
+export const EmbeddedContext = createContext(false);
 
 /** A count that is shown or suppressed. The server sends no number for a suppressed cell. */
 export type Cell = { suppressed: true } | { n: number };
@@ -20,6 +23,7 @@ export function CellText({ cell }: { cell: Cell | number | null | undefined | { 
 export const cellValue = (c: Cell | undefined): number | undefined => (c && "n" in c ? c.n : undefined);
 
 export function PageHeader({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) {
+  if (useContext(EmbeddedContext)) return null;
   return (
     <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
       <div>
