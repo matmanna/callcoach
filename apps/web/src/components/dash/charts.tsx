@@ -13,8 +13,17 @@ export interface Series {
  * Stacked bars or lines. Values of `undefined` (suppressed cells) are not plotted: a suppressed
  * cell is never drawn as zero. The table beside each chart states "suppressed (under 5)".
  */
-export function SeriesChart({ data, x, series, kind = "bar" }: { data: Array<Record<string, string | number | undefined>>; x: string; series: Series[]; kind?: "bar" | "line" }) {
-  const config: ChartConfig = Object.fromEntries(series.map((s, i) => [s.key, { label: s.label, color: COLORS[i % COLORS.length]! }]));
+/**
+ * CSS custom properties cannot contain spaces or parentheses, so a series key such as "Reached (%)"
+ * would produce an invalid `--color-*` and draw black bars. Keys are made CSS-safe here, and the
+ * data rows are renamed to match. Labels still show the original text.
+ */
+const safeKey = (key: string) => key.replace(/[^A-Za-z0-9_-]/g, "_");
+
+export function SeriesChart({ data: rawData, x, series: rawSeries, kind = "bar" }: { data: Array<Record<string, string | number | undefined>>; x: string; series: Series[]; kind?: "bar" | "line" }) {
+  const series = rawSeries.map((s) => ({ ...s, key: safeKey(s.key) }));
+  const data = rawData.map((row) => Object.fromEntries(rawSeries.map((s, i) => [series[i]!.key, row[s.key]]).concat([[x, row[x]]])));
+  const config: ChartConfig = Object.fromEntries(series.map((s, i) => [s.key, { label: rawSeries[i]!.label, color: COLORS[i % COLORS.length]! }]));
   return (
     <ChartContainer config={config} className="h-64 w-full">
       {kind === "bar" ? (
