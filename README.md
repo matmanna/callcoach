@@ -8,11 +8,11 @@ CallCoach gives coordinators and volunteer callers a shared, privacy-minded way 
 
 ## Demo video
 
-<video src="https://github.com/matmanna/callcoach/raw/main/docs/video/callcoach-pitch-final.mp4" poster="docs/video/callcoach-pitch-poster.jpg" controls width="100%"></video>
+<video src="https://github.com/matmanna/callcoach/raw/main/docs/video/callcoach-pitch-full.mp4" poster="docs/video/callcoach-pitch-poster.jpg" controls width="100%"></video>
 
-[![CallCoach demo video: simulated call with an approved fact cue](docs/video/callcoach-pitch-poster.jpg)](docs/video/callcoach-pitch-final.mp4)
+[![CallCoach demo video: simulated call with an approved fact cue](docs/video/callcoach-pitch-poster.jpg)](docs/video/callcoach-pitch-full.mp4)
 
-[Watch the 90-second demo (MP4)](docs/video/callcoach-pitch-final.mp4). It uses screen recordings and stills from the local app with synthetic data only. The live-call segment is a labelled simulation with a synthetic donor.
+[Watch the 90-second demo (MP4)](docs/video/callcoach-pitch-full.mp4). It is built from screen recordings of the running app with synthetic data only. Some on-screen details are mocked up for the demo: the live-call transcript and cue (a labelled simulation with a synthetic donor), the last-contact field, the team time-zone column, and the geography map (drawn from real app data).
 
 ## Product views
 
@@ -268,6 +268,11 @@ With the synthetic seed data, a coordinator and caller can complete this path:
 - [Local AI and Tauri flow](docs/local-ai-tauri.md)
 - [Pre-call and post-call platform details](docs/p2-pre-post-call.md)
 - [Repository operating principles](AGENTS.md)
+
+## Team
+
+- **Mat M** — [@matmanna](https://github.com/matmanna)
+- **Ved Patel** — [@Vedpatel-MechE](https://github.com/Vedpatel-MechE)
 
 ---
 
